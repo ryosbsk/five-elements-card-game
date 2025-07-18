@@ -1,0 +1,452 @@
+/* 基本設定 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+}
+
+/* ゲーム情報表示 */
+.game-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.phase-display, .enemy-info {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.phase-display {
+    color: #4a90e2;
+}
+
+.enemy-info {
+    color: #e74c3c;
+}
+
+/* 行動順表示 */
+.turn-order-display {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.turn-order-display h4 {
+    margin: 0 0 10px 0;
+    color: #4a90e2;
+    text-align: center;
+}
+
+.turn-order-list {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.turn-order-card {
+    background: white;
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.turn-order-card.current-turn {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border-width: 3px;
+}
+
+.turn-order-card.player {
+    background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+    border-color: #2196f3;
+}
+
+.turn-order-card.enemy {
+    background: linear-gradient(to bottom, #ffebee, #ffcdd2);
+    border-color: #f44336;
+}
+
+.turn-order-card .card-name {
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.turn-order-card .card-speed {
+    color: #3498db;
+    font-size: 10px;
+}
+
+.turn-order-card .card-owner {
+    color: #666;
+    font-size: 9px;
+    margin-top: 2px;
+}
+
+/* プレイヤー情報表示 */
+.player-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pp-display, .victory-display {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.pp-display {
+    color: #7b68ee;
+}
+
+.victory-display {
+    color: #e74c3c;
+}
+
+/* 戦闘エリア */
+.enemy-area, .player-area {
+    margin-bottom: 20px;
+}
+
+.enemy-area h3, .player-area h3 {
+    text-align: center;
+    color: white;
+    margin-bottom: 10px;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.battlefield {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.card-slot {
+    width: 140px;
+    height: 180px;
+    border: 3px dashed #ccc;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.card-slot:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.empty-slot {
+    color: #999;
+    font-size: 14px;
+}
+
+/* カードスタイル */
+.card {
+    width: 130px;
+    height: 170px;
+    border-radius: 10px;
+    border: 3px solid;
+    padding: 10px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.card.selectable {
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.card.selectable-target {
+    border-color: #ff6b6b !important;
+    background: rgba(255, 107, 107, 0.1) !important;
+}
+
+/* 五行属性別色分け */
+.card.木 { 
+    border-color: #4CAF50; 
+    background: linear-gradient(to bottom, #E8F5E8, #C8E6C9); 
+}
+
+.card.火 { 
+    border-color: #F44336; 
+    background: linear-gradient(to bottom, #FFEBEE, #FFCDD2); 
+}
+
+.card.土 { 
+    border-color: #8D6E63; 
+    background: linear-gradient(to bottom, #EFEBE9, #D7CCC8); 
+}
+
+.card.金 { 
+    border-color: #FFC107; 
+    background: linear-gradient(to bottom, #FFFDE7, #FFF9C4); 
+}
+
+.card.水 { 
+    border-color: #2196F3; 
+    background: linear-gradient(to bottom, #E3F2FD, #BBDEFB); 
+}
+
+/* カード内容 */
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.card-name {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.card-cost {
+    background: #333;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.card-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.stat.hp { color: #e74c3c; }
+.stat.attack { color: #f39c12; }
+.stat.speed { color: #3498db; }
+
+/* 手札エリア */
+.hand-area {
+    margin-bottom: 20px;
+}
+
+.hand-area h3 {
+    text-align: center;
+    color: white;
+    margin-bottom: 10px;
+    font-size: 18px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.hand-cards {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.hand-cards .card {
+    width: 110px;
+    height: 140px;
+    padding: 8px;
+}
+
+.hand-cards .card:hover {
+    transform: translateY(-8px);
+}
+
+/* コントロールエリア */
+.control-area {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.action-button {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 0 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.action-button:hover {
+    background: #357abd;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.action-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.restart-btn {
+    background: #e74c3c;
+}
+
+.restart-btn:hover {
+    background: #c0392b;
+}
+
+.skip-btn {
+    background: #f39c12;
+}
+
+.skip-btn:hover {
+    background: #e67e22;
+}
+
+/* メッセージエリア */
+.message-area {
+    background: rgba(255, 255, 255, 0.9);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+#game-message {
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+/* ゲーム背景（攻撃キャンセル用） */
+.game-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.game-background.clickable {
+    pointer-events: auto;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .game-container {
+        padding: 10px;
+    }
+    
+    .battlefield {
+        gap: 10px;
+    }
+    
+    .card-slot {
+        width: 100px;
+        height: 130px;
+    }
+    
+    .card {
+        width: 90px;
+        height: 120px;
+        padding: 6px;
+    }
+    
+    .hand-cards .card {
+        width: 80px;
+        height: 100px;
+        padding: 4px;
+    }
+    
+    .game-info {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .card-name {
+        font-size: 12px;
+    }
+    
+    .stat {
+        font-size: 10px;
+    }
+}
+
+/* 戦闘エフェクト */
+.battle-effect {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: battlePop 0.8s ease-out;
+}
+
+@keyframes battlePop {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
