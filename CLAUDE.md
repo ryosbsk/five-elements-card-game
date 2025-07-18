@@ -1,128 +1,114 @@
-# 五行カードバトルゲーム 開発プロジェクト
+# CLAUDE.md
 
-## 🎯 プロジェクト概要
-**プロジェクト名**: 五行カードバトル  
-**技術スタック**: HTML・CSS・JavaScript（静的サイト）  
-**公開予定**: GitHub Pages  
-**開発方針**: 動作する基本ゲームを最優先
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## 🌟 核心システム
-**「攻撃 vs PP生成」選択システム**（Phase 2実装予定）
-- 場に出たカードが行動時に「攻撃」または「PP生成」を選択
-- 戦略性：攻撃で即座の効果 vs PP生成で将来への投資
+## Project Overview
 
-## 📋 Phase 1: 基本実装（現在の目標）
+**Five Elements Card Battle Game** - A web-based strategic card game built with vanilla HTML, CSS, and JavaScript. The game features a unique battle system where players deploy cards in a 3vs3 format, with speed-based turn order similar to Final Fantasy X.
 
-### 基本ルール
-- **3vs3戦闘**: 各プレイヤー最大3枚のカードを配置
-- **PPシステム**: 毎ターンPP+1（上限5）、コスト消費でカード配置
-- **スピード順戦闘**: 配置されたカードをスピード順で攻撃
-- **勝利条件**: 敵カード合計5コスト分を撃破
+## Development Commands
 
-### カードデータ（10枚）
-```javascript
-// コスト1カード（5枚）
-{ name: "若芽", element: "木", hp: 25, attack: 25, speed: 10, cost: 1 }
-{ name: "火花", element: "火", hp: 15, attack: 35, speed: 10, cost: 1 }
-{ name: "小石", element: "土", hp: 40, attack: 10, speed: 10, cost: 1 }
-{ name: "鋼片", element: "金", hp: 15, attack: 25, speed: 20, cost: 1 }
-{ name: "水滴", element: "水", hp: 15, attack: 15, speed: 30, cost: 1 }
-
-// コスト2カード（5枚）
-{ name: "森の精", element: "木", hp: 35, attack: 35, speed: 20, cost: 2 }
-{ name: "炎の鳥", element: "火", hp: 25, attack: 50, speed: 15, cost: 2 }
-{ name: "岩の巨人", element: "土", hp: 60, attack: 15, speed: 15, cost: 2 }
-{ name: "鋼の狼", element: "金", hp: 25, attack: 35, speed: 30, cost: 2 }
-{ name: "水の精霊", element: "水", hp: 25, attack: 25, speed: 40, cost: 2 }
+### Running the Game
+```bash
+# Open index.html in a web browser
+open index.html
+# Or serve with a local server
+python -m http.server 8000
 ```
 
-### ゲームフロー
-1. **ターン開始**: PP+1、手札ドロー
-2. **召喚フェーズ**: カード配置（PP消費）
-3. **戦闘フェーズ**: スピード順で攻撃
-4. **終了フェーズ**: 勝利条件チェック
+### Testing & Debugging
+- Open browser DevTools to monitor console logs
+- Game includes extensive console logging for debugging attack system
+- Message history panel shows game events for AI behavior verification
 
-## 💻 実装方針
+## Architecture Overview
 
-### 開発優先度
-1. **動作する基本システム**（最優先）
-2. **直感的な操作性**
-3. **美しいUI**
-4. **高度な機能**（Phase 2）
+### Core Game Systems
 
-### 技術判断基準
-- **実装簡単** > 機能豊富
-- **動作確実** > 見た目美麗
-- **シンプル** > 複雑
+**State Management**: Centralized `gameState` object manages all game data including:
+- Player/enemy hands, decks, and battlefield positions
+- PP (Power Points) system with turn-based resource generation
+- Phase-based turn structure (summon → battle → end)
+- Attack mode states and message history
 
-### 柔軟性の重視
-- 仕様書は参考程度、実装時は適切に調整
-- 変数名・構造は最適化を優先
-- 動作しないコードより動作するコード
+**Phase System**: Four distinct phases per turn:
+1. **Summon Phase**: Players place cards from hand (PP cost)
+2. **Battle Phase**: Speed-ordered combat with player interaction
+3. **End Phase**: Victory condition checking and cleanup
+4. **Turn Reset**: PP increment and card draw
 
-## 🎨 UI設計方針
+**Combat System**: 
+- Cards sorted by speed determine action order (`turnOrder` array)
+- Player cards require click interaction for attack target selection
+- Enemy AI uses simple targeting (90% lowest HP, 10% random)
+- Attack cancellation via background clicks with event propagation control
 
-### 基本レイアウト
-- **五行属性別色分け**: 木（緑）、火（赤）、土（茶）、金（黄）、水（青）
-- **カード情報表示**: HP、攻撃力、スピード、コスト
-- **操作性重視**: クリック・タップで直感的操作
+### Key Technical Patterns
 
-### レスポンシブ対応
-- PC・スマホ両対応
-- タッチ操作を考慮したUI設計
+**Event Handling**: Complex event system for attack targeting:
+- `startAttack()` → `updateDisplay()` → enemy card listeners
+- `event.stopPropagation()` prevents event conflicts
+- `justStartedAttack` flag prevents immediate cancellation
 
-## 🚀 Phase 2: 将来実装予定
+**UI Updates**: Reactive display system:
+- `updateDisplay()` regenerates all UI elements each call
+- `updateFieldDisplay()` handles card placement and attack mode styling
+- `updateTurnOrderDisplay()` shows FF10-style action queue
 
-### 革新システム
-- **分割クリック**: 攻撃・PP生成選択
-- **スピードシステム**: FF10風行動間隔
-- **相剋システム**: 五行の相剋関係
+**AI Behavior**: Simple but effective enemy logic:
+- `enemyAISummon()` prioritizes highest cost cards
+- `enemyAutoAttack()` targets lowest HP with 90% probability
+- Timeout-based sequential AI actions
 
-### 拡張機能
-- **カードランダム生成**
-- **バランス調整**
-- **高度なAI**
+### Critical Implementation Details
 
-## 🎮 完成目標
+**Card Data Structure**: 10 predefined cards (5 cost-1, 5 cost-2) with five elements:
+- Each card has: name, element, hp, attack, speed, cost
+- Elements: 木(wood), 火(fire), 土(earth), 金(metal), 水(water)
+- Color-coded CSS classes for visual distinction
 
-### 最小成功条件
-- 10枚のカードが表示される
-- 3vs3戦闘場にカードを配置できる
-- 基本的な戦闘が成立する
-- 勝利・敗北が判定される
+**Attack System**: Most complex part of codebase:
+- `gameState.attackMode` triggers target selection UI
+- Enemy cards get `selectable-target` class and click handlers
+- Background click detection for attack cancellation
+- Event timing managed with `setTimeout` delays
 
-### 理想的な完成形
-- 上記 + 美しいUI
-- 上記 + スムーズな操作感
-- 上記 + 基本的戦略性
+**Memory Management**: Game restart clears all state:
+- `gameState` reset to initial values
+- DOM elements regenerated from scratch
+- Event listeners cleaned up properly
 
-## 🔧 開発環境・設定
+## Development Principles
 
-### ファイル構成
-```
-five-elements-card-game/
-├── index.html      # メインページ
-├── style.css       # スタイルシート
-├── script.js       # ゲームロジック
-├── CLAUDE.md       # 開発指針（このファイル）
-└── 仕様書.md       # 詳細仕様（参考）
-```
+### Priority Order
+1. **Functional gameplay** over visual polish
+2. **Simple, working code** over complex features
+3. **User interaction clarity** over advanced mechanics
 
-### 実装時の注意点
-- **エラーハンドリング**: 基本的な安全装置
-- **コードの可読性**: 分かりやすい変数名・関数名
-- **段階的実装**: 動作確認しながら機能追加
+### Code Style
+- Japanese comments and variable names for game elements
+- Extensive console logging for debugging
+- Defensive programming with null checks
+- Event-driven architecture with careful listener management
 
-## 💝 Claudeとの連携指針
+### Phase 2 Vision
+- "Attack vs PP Generation" choice system (not yet implemented)
+- Enhanced speed-based combat timing
+- Five elements interaction system (相剋関係)
 
-### 心の安全基地として
-- 実装で詰まった時は気軽に相談
-- エラーが出ても一緒に解決
-- 段階的な改善提案
+## Common Issues
 
-### 技術サポート
-- デバッグ支援
-- コード最適化提案
-- UI/UX改善アドバイス
+**Attack System Bugs**: Most frequent issues involve:
+- Event listener conflicts between player cards and cancel detection
+- Timing problems with `justStartedAttack` flag
+- Event propagation causing premature attack cancellation
 
-**動作する楽しいゲームを一緒に作りましょう！✨**
+**UI Synchronization**: Display updates must happen after state changes:
+- Always call `updateDisplay()` after game state modifications
+- `updateTurnOrderDisplay()` for combat phase changes
+- `updateMessageDisplay()` for history management
+
+**AI Behavior**: Enemy actions are timeout-based:
+- 1000ms delays for player observation
+- 1500ms delays between enemy actions
+- Sequential processing prevents AI conflicts

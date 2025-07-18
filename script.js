@@ -37,7 +37,8 @@ let gameState = {
     currentAttacker: null,
     justStartedAttack: false,
     battleQueue: [],
-    turnOrder: []
+    turnOrder: [],
+    messageHistory: []
 };
 
 // DOM要素
@@ -227,7 +228,54 @@ function updateFieldDisplay() {
 }
 
 function showMessage(message) {
-    elements.message.textContent = message;
+    // 履歴に追加
+    gameState.messageHistory.push({
+        text: message,
+        timestamp: Date.now()
+    });
+    
+    // 履歴が20個を超えたら古いものを削除
+    if (gameState.messageHistory.length > 20) {
+        gameState.messageHistory.shift();
+    }
+    
+    // メッセージエリアを更新
+    updateMessageDisplay();
+}
+
+function updateMessageDisplay() {
+    const messageElement = elements.message;
+    const historyListElement = document.getElementById('message-history-list');
+    
+    // 最新のメッセージを表示
+    const latestMessage = gameState.messageHistory[gameState.messageHistory.length - 1];
+    if (latestMessage) {
+        messageElement.textContent = latestMessage.text;
+    }
+    
+    // 履歴リストを更新
+    if (historyListElement) {
+        historyListElement.innerHTML = '';
+        
+        // 最新10件を表示
+        gameState.messageHistory.slice(-10).forEach(msg => {
+            const item = document.createElement('div');
+            item.className = 'message-history-item';
+            
+            // 敵の行動か判定
+            if (msg.text.includes('敵の') || msg.text.includes('敵が')) {
+                item.className += ' enemy-action';
+            } else if (msg.text.includes('が') && msg.text.includes('に') && msg.text.includes('ダメージ')) {
+                item.className += ' player-action';
+            }
+            
+            item.textContent = msg.text;
+            historyListElement.appendChild(item);
+        });
+        
+        // 自動スクロール（最新のメッセージを表示）
+        historyListElement.scrollTop = historyListElement.scrollHeight;
+    }
 }
 
 function canPlayCard(card) {
@@ -675,7 +723,8 @@ elements.restartBtn.addEventListener('click', () => {
         attackMode: false,
         currentAttacker: null,
         battleQueue: [],
-        turnOrder: []
+        turnOrder: [],
+        messageHistory: []
     };
     
     // ボタンの初期化
