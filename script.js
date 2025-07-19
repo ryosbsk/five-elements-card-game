@@ -14,12 +14,12 @@ const SoundManager = {
         
         // SE読み込み
         const soundFiles = {
-            summon: 'assets/audio/se/召喚.mp3',
-            select: 'assets/audio/se/選択.mp3', 
-            attack: 'assets/audio/se/攻撃.mp3',
-            victory: 'assets/audio/se/勝利.mp3',
-            defeat: 'assets/audio/se/敗北.mp3',
-            button: 'assets/audio/se/ボタン.mp3'
+            summon: 'assets/audio/se/summon.mp3',
+            select: 'assets/audio/se/select.mp3', 
+            attack: 'assets/audio/se/attack.mp3',
+            victory: 'assets/audio/se/victory.mp3',
+            defeat: 'assets/audio/se/defeat.mp3',
+            button: 'assets/audio/se/button.mp3'
         };
         
         for (const [key, path] of Object.entries(soundFiles)) {

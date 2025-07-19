@@ -1,114 +1,67 @@
-# CLAUDE.md
+# 五行カードバトル開発指針
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは五行カードバトルゲームの開発において、Claude Codeが参照すべき専用の指針です。
 
-## Project Overview
+## ゲーム固有のUX原則
 
-**Five Elements Card Battle Game** - A web-based strategic card game built with vanilla HTML, CSS, and JavaScript. The game features a unique battle system where players deploy cards in a 3vs3 format, with speed-based turn order similar to Final Fantasy X.
+### 右利きプレイヤー最適化
+- **戦闘エリア右側配置**: カードタップのメイン操作を右手で快適に
+- **行動順左側配置**: 参照のみの情報は左側で邪魔にならない位置
+- **ボタン配置戦略**: 
+  - 左側: ゲーム再開（低頻度）
+  - 右側: スキップ・ターン終了（高頻度）
+- **操作動線**: 右手でカード攻撃 → そのまま右手でボタン操作
 
-## Development Commands
+### 戦闘情報の視認性最優先
+- **瞬時把握**: フェーズ・PP・撃破情報をバッジ形式で一目で認識
+- **高コントラスト**: 白背景 + はっきりした境界線で情報を明確に分離
+- **手札近接情報**: プレイヤー重要情報を手札上部に集約
 
-### Running the Game
-```bash
-# Open index.html in a web browser
-open index.html
-# Or serve with a local server
-python -m http.server 8000
-```
+### リアルタイム戦闘体験
+- **行動順の重要性**: FF10風システムで次の行動者を明確表示
+- **攻撃フロー**: カード選択 → 対象選択 → 結果確認の流れを重視
+- **状態変化の追跡**: HP・PP・撃破数の変動を即座に反映
 
-### Testing & Debugging
-- Open browser DevTools to monitor console logs
-- Game includes extensive console logging for debugging attack system
-- Message history panel shows game events for AI behavior verification
+## 技術制約・要件
 
-## Architecture Overview
+### GitHub Pages対応
+- **英語ファイル名必須**: 日本語ファイル名はURLエンコードエラーの原因
+- **音声ファイル**: select.mp3, summon.mp3, attack.mp3, victory.mp3, defeat.mp3, button.mp3
+- **BGMファイル**: bgm.mp3（autoplay policy対応済み）
 
-### Core Game Systems
+### フロントエンド構成
+- **バニラJavaScript**: フレームワーク不使用、シンプルな構成
+- **CSS Grid**: 3列レイアウト（行動順 | 戦闘エリア | 戦闘エリア）
+- **イベントドリブン**: ユーザー操作中心の設計
+- **レスポンシブ**: モバイル対応でタッチ操作を考慮
 
-**State Management**: Centralized `gameState` object manages all game data including:
-- Player/enemy hands, decks, and battlefield positions
-- PP (Power Points) system with turn-based resource generation
-- Phase-based turn structure (summon → battle → end)
-- Attack mode states and message history
+### 音響システム
+- **SoundManager**: BGM・SE統合管理
+- **音量制御**: BGM 0.05, SE 0.5 の適切なバランス
+- **ユーザー操作開始**: 開始画面でautoplay policy回避
 
-**Phase System**: Four distinct phases per turn:
-1. **Summon Phase**: Players place cards from hand (PP cost)
-2. **Battle Phase**: Speed-ordered combat with player interaction
-3. **End Phase**: Victory condition checking and cleanup
-4. **Turn Reset**: PP increment and card draw
+## デバッグ・開発支援
 
-**Combat System**: 
-- Cards sorted by speed determine action order (`turnOrder` array)
-- Player cards require click interaction for attack target selection
-- Enemy AI uses simple targeting (90% lowest HP, 10% random)
-- Attack cancellation via background clicks with event propagation control
+### 豊富なログ出力
+- **戦闘フロー**: 🎯🔊⚔️💥 などの絵文字で視覚的ログ
+- **状態変更**: オブジェクト内容を詳細出力
+- **エラー判定**: 人間に分かりやすい日本語メッセージ
 
-### Key Technical Patterns
+### 段階的開発アプローチ
+- **Phase 1完了**: 基本戦闘システム（3vs3、PPシステム、勝利条件）
+- **Phase 2計画**: 攻撃 vs PP生成選択システム
+- **Phase 3構想**: 五行相剋システム
 
-**Event Handling**: Complex event system for attack targeting:
-- `startAttack()` → `updateDisplay()` → enemy card listeners
-- `event.stopPropagation()` prevents event conflicts
-- `justStartedAttack` flag prevents immediate cancellation
+## 開発時の注意点
 
-**UI Updates**: Reactive display system:
-- `updateDisplay()` regenerates all UI elements each call
-- `updateFieldDisplay()` handles card placement and attack mode styling
-- `updateTurnOrderDisplay()` shows FF10-style action queue
+### コード品質
+- **日本語コメント**: ゲーム要素の説明は日本語で分かりやすく
+- **状態管理**: 中央集権的なgameStateオブジェクト
+- **エラーハンドリング**: 防御的プログラミングでnullチェック必須
 
-**AI Behavior**: Simple but effective enemy logic:
-- `enemyAISummon()` prioritizes highest cost cards
-- `enemyAutoAttack()` targets lowest HP with 90% probability
-- Timeout-based sequential AI actions
+### ユーザビリティテスト観点
+- **操作迷い**: 「次に何をすればいい？」が明確か
+- **情報不足**: 「PP足りない？」「どのフェーズ？」への即答性
+- **視認性**: ゲーム中の重要情報が瞬時に把握できるか
 
-### Critical Implementation Details
-
-**Card Data Structure**: 10 predefined cards (5 cost-1, 5 cost-2) with five elements:
-- Each card has: name, element, hp, attack, speed, cost
-- Elements: 木(wood), 火(fire), 土(earth), 金(metal), 水(water)
-- Color-coded CSS classes for visual distinction
-
-**Attack System**: Most complex part of codebase:
-- `gameState.attackMode` triggers target selection UI
-- Enemy cards get `selectable-target` class and click handlers
-- Background click detection for attack cancellation
-- Event timing managed with `setTimeout` delays
-
-**Memory Management**: Game restart clears all state:
-- `gameState` reset to initial values
-- DOM elements regenerated from scratch
-- Event listeners cleaned up properly
-
-## Development Principles
-
-### Priority Order
-1. **Functional gameplay** over visual polish
-2. **Simple, working code** over complex features
-3. **User interaction clarity** over advanced mechanics
-
-### Code Style
-- Japanese comments and variable names for game elements
-- Extensive console logging for debugging
-- Defensive programming with null checks
-- Event-driven architecture with careful listener management
-
-### Phase 2 Vision
-- "Attack vs PP Generation" choice system (not yet implemented)
-- Enhanced speed-based combat timing
-- Five elements interaction system (相剋関係)
-
-## Common Issues
-
-**Attack System Bugs**: Most frequent issues involve:
-- Event listener conflicts between player cards and cancel detection
-- Timing problems with `justStartedAttack` flag
-- Event propagation causing premature attack cancellation
-
-**UI Synchronization**: Display updates must happen after state changes:
-- Always call `updateDisplay()` after game state modifications
-- `updateTurnOrderDisplay()` for combat phase changes
-- `updateMessageDisplay()` for history management
-
-**AI Behavior**: Enemy actions are timeout-based:
-- 1000ms delays for player observation
-- 1500ms delays between enemy actions
-- Sequential processing prevents AI conflicts
+この指針により、五行カードバトルが「直感的で戦略的」なゲーム体験を提供できるよう開発を進めます。
