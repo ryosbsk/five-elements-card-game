@@ -4,33 +4,35 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>五行カードバトル</title>
+    <link rel="icon" href="data:,"> <!-- favicon 404エラー防止 -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-container">
-        <!-- ゲーム情報表示 -->
-        <div class="game-info">
-            <div class="phase-display">
-                <span id="current-phase">ゲーム開始</span>
-                <span id="turn-counter">ターン: 1</span>
+    <!-- ゲーム開始画面 -->
+    <div id="start-screen" class="start-screen">
+        <div class="start-content">
+            <h1>🌟 五行カードバトル 🌟</h1>
+            <p>五行の力を使って戦略的バトル！</p>
+            <div class="game-description">
+                <div class="rule-item">⚔️ 3vs3のカードバトル</div>
+                <div class="rule-item">💎 PPでカードを召喚</div>
+                <div class="rule-item">🏆 敵カード5コスト撃破で勝利</div>
             </div>
-            <div class="enemy-info">
-                <span id="enemy-hand-count">敵手札: 3枚</span>
-                <span id="enemy-pp">敵PP: 1/1</span>
-            </div>
+            <button id="start-game-btn" class="start-button">
+                🎮 ゲーム開始
+            </button>
         </div>
+    </div>
 
-        <!-- 行動順表示 -->
-        <div class="turn-order-display">
-            <h4>行動順</h4>
-            <div id="turn-order" class="turn-order-list">
-                <!-- 行動順がここに表示される -->
-            </div>
-        </div>
-
+    <div class="game-container" id="game-container" style="display: none;">
         <!-- 敵エリア -->
         <div class="enemy-area">
-            <h3>敵エリア</h3>
+            <div class="enemy-info-overlay">
+                <span class="area-label">敵</span>
+                <span id="enemy-pp">💎 PP: 1/1</span>
+                <span id="enemy-victory-counter">🏆 撃破: 0/5</span>
+                <span id="enemy-hand-count">💳 手札: 3枚</span>
+            </div>
             <div class="battlefield" id="enemy-battlefield">
                 <div class="card-slot" id="enemy-slot-0">
                     <div class="empty-slot">空</div>
@@ -46,7 +48,6 @@
 
         <!-- プレイヤーエリア -->
         <div class="player-area">
-            <h3>プレイヤーエリア</h3>
             <div class="battlefield" id="player-battlefield">
                 <div class="card-slot" id="player-slot-0">
                     <div class="empty-slot">空</div>
@@ -60,44 +61,81 @@
             </div>
         </div>
 
-        <!-- 手札エリア -->
-        <div class="hand-area">
-            <h3>手札</h3>
-            <div class="hand-cards" id="player-hand">
-                <!-- 手札のカードがここに表示される -->
-            </div>
-        </div>
-
-        <!-- プレイヤー情報表示 -->
-        <div class="player-info">
-            <div class="pp-display">
-                <span id="pp-counter">PP: 1/1</span>
-            </div>
-            <div class="victory-display">
-                <span id="victory-counter">撃破: 0/5</span>
-            </div>
-        </div>
-
-        <!-- コントロールエリア -->
-        <div class="control-area">
-            <button id="end-turn-btn" class="action-button">ターン終了</button>
-            <button id="skip-action-btn" class="action-button skip-btn">行動スキップ</button>
-            <button id="restart-btn" class="action-button restart-btn">ゲーム再開</button>
-        </div>
-
-        <!-- メッセージエリア -->
-        <div class="message-area">
-            <div id="game-message">ゲームを開始します！手札からカードを選んでクリックしてください。</div>
-            <div class="message-history" id="message-history">
-                <h4>メッセージ履歴</h4>
-                <div id="message-history-list" class="message-history-list">
-                    <!-- 履歴がここに表示される -->
+        <!-- 行動順表示 -->
+        <div class="turn-order-area">
+            <div class="turn-order-card">
+                <div class="info-title">行動順</div>
+                <div id="turn-order" class="turn-order-list">
+                    <!-- 行動順がここに表示される -->
                 </div>
+            </div>
+        </div>
+
+        <!-- プレイヤー統合コントロールゾーン -->
+        <div class="player-control-zone">
+            <!-- プレイヤー情報ヘッダー -->
+            <div class="player-info-header">
+                <div class="info-badge phase-display" id="current-phase">ゲーム開始</div>
+                <div class="info-badge turn-display" id="turn-counter">ターン: 1</div>
+                <div class="info-badge pp-display" id="pp-counter">💎 PP: 1/1</div>
+                <div class="info-badge victory-display" id="victory-counter">🏆 撃破: 0/5</div>
+            </div>
+
+            <!-- 手札エリア -->
+            <div class="hand-section">
+                <div class="section-header">手札</div>
+                <div class="hand-cards" id="player-hand">
+                    <!-- 手札のカードがここに表示される -->
+                </div>
+            </div>
+
+            <!-- コントロール -->
+            <div class="controls">
+                <button id="end-turn-btn" class="action-button primary">ターン終了</button>
+                <button id="skip-action-btn" class="action-button secondary">行動スキップ</button>
+                <button id="restart-btn" class="action-button restart">ゲーム再開</button>
+            </div>
+
+            <!-- メッセージ -->
+            <div class="message-section">
+                <div id="game-message" class="current-message">
+                    ゲームを開始します！手札からカードを選んでクリックしてください。
+                </div>
+                <details class="message-history-details">
+                    <summary class="message-history-toggle">📜 履歴</summary>
+                    <div id="message-history-list" class="message-history-list">
+                        <!-- 履歴がここに表示される -->
+                    </div>
+                </details>
             </div>
         </div>
 
         <!-- ゲーム背景（攻撃キャンセル用） -->
         <div id="game-background" class="game-background"></div>
+    </div>
+
+    <!-- 音響コントロール（右下固定） -->
+    <div class="audio-controls" id="audio-controls" style="display: none;">
+        <button id="audio-toggle" class="audio-toggle" title="音響設定">
+            🔊
+        </button>
+        <div id="audio-panel" class="audio-panel" style="display: none;">
+            <div class="audio-setting">
+                <label>🎵 BGM</label>
+                <div class="audio-control-row">
+                    <button id="bgm-toggle" class="toggle-btn">ON</button>
+                    <input type="range" id="bgm-volume" min="0" max="100" value="30" class="volume-slider">
+                </div>
+            </div>
+            <div class="audio-setting">
+                <label>🔊 SE</label>
+                <div class="audio-control-row">
+                    <button id="se-toggle" class="toggle-btn">ON</button>
+                    <input type="range" id="se-volume" min="0" max="100" value="70" class="volume-slider">
+                </div>
+            </div>
+            <button id="audio-close" class="close-btn">×</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
