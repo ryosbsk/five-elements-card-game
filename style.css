@@ -415,6 +415,35 @@ body {
     font-weight: bold;
 }
 
+/* 横並びカードステータス */
+.card-stats-horizontal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.stat-icons {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    justify-content: center;
+}
+
+.stat-values {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    font-weight: bold;
+    justify-content: center;
+}
+
+.stat-value.hp { color: #e74c3c; }
+.stat-value.attack { color: #f39c12; }
+.stat-value.speed { color: #3498db; }
+
+/* 従来のステータス（互換性のため残す） */
 .card-stats {
     display: flex;
     flex-direction: column;
@@ -586,30 +615,42 @@ body {
     font-weight: 500;
 }
 
-/* 音響コントロール（右下固定） */
-.audio-controls {
+/* 統合コントロールパネル（右下固定） */
+.control-panel {
     position: fixed;
     bottom: 20px;
     right: 20px;
     z-index: 1000;
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 8px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
 }
 
-.audio-toggle {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border: none;
-    font-size: 20px;
+.control-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: transparent;
+    color: #888;
+    border: 2px solid #e0e0e0;
+    font-size: 18px;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.audio-toggle:hover {
-    background: rgba(0, 0, 0, 0.9);
-    transform: scale(1.1);
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #ccc;
+    color: #555;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .audio-panel {
@@ -745,4 +786,539 @@ body {
 @keyframes battlePop {
     0% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
     100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* ダメージアニメーション */
+.damage-animation {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-weight: bold;
+    font-size: 20px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    z-index: 1000;
+    animation: damageFloat 1s ease-out forwards;
+}
+
+.damage-animation.effective {
+    color: #ff4444;
+    font-size: 24px;
+    text-shadow: 2px 2px 4px rgba(255, 68, 68, 0.6);
+}
+
+/* 五行属性別ダメージアニメーション */
+.damage-animation.effective.木 {
+    color: #4CAF50;
+    text-shadow: 2px 2px 4px rgba(76, 175, 80, 0.8);
+}
+
+.damage-animation.effective.火 {
+    color: #F44336;
+    text-shadow: 2px 2px 4px rgba(244, 67, 54, 0.8);
+}
+
+.damage-animation.effective.土 {
+    color: #8D6E63;
+    text-shadow: 2px 2px 4px rgba(141, 110, 99, 0.8);
+}
+
+.damage-animation.effective.金 {
+    color: #FFC107;
+    text-shadow: 2px 2px 4px rgba(255, 193, 7, 0.8);
+}
+
+.damage-animation.effective.水 {
+    color: #2196F3;
+    text-shadow: 2px 2px 4px rgba(33, 150, 243, 0.8);
+}
+
+@keyframes damageFloat {
+    0% { 
+        opacity: 1; 
+        transform: translate(-50%, -50%) scale(1.2); 
+    }
+    20% { 
+        opacity: 1; 
+        transform: translate(-50%, -60%) scale(1); 
+    }
+    100% { 
+        opacity: 0; 
+        transform: translate(-50%, -100%) scale(0.8); 
+    }
+}
+
+/* スラッシュエフェクト（実装保留中）
+.slash-effect {
+    position: absolute !important;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 80%;
+    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+    transform: translate(-50%, -50%) rotate(45deg);
+    pointer-events: none;
+    z-index: 1001;
+    animation: slashAnimation 0.5s ease-out forwards;
+    border-radius: 2px;
+}
+
+.slash-effect.effective {
+    background: linear-gradient(45deg, transparent, rgba(255, 68, 68, 0.9), transparent);
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.6);
+}
+
+.slash-effect.effective.木 {
+    background: linear-gradient(45deg, transparent, rgba(76, 175, 80, 0.9), transparent);
+    box-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+    animation: slashAnimation 0.3s ease-out forwards, leafEffect 0.5s ease-out forwards;
+}
+
+.slash-effect.effective.火 {
+    background: linear-gradient(45deg, transparent, rgba(244, 67, 54, 0.9), transparent);
+    box-shadow: 0 0 15px rgba(244, 67, 54, 0.8);
+    animation: slashAnimation 0.3s ease-out forwards, flameEffect 0.5s ease-out forwards;
+}
+
+.slash-effect.effective.土 {
+    background: linear-gradient(45deg, transparent, rgba(141, 110, 99, 0.9), transparent);
+    box-shadow: 0 0 15px rgba(141, 110, 99, 0.8);
+    animation: slashAnimation 0.3s ease-out forwards, earthEffect 0.5s ease-out forwards;
+}
+
+.slash-effect.effective.金 {
+    background: linear-gradient(45deg, transparent, rgba(255, 193, 7, 0.9), transparent);
+    box-shadow: 0 0 15px rgba(255, 193, 7, 0.8);
+    animation: slashAnimation 0.3s ease-out forwards, metalEffect 0.5s ease-out forwards;
+}
+
+.slash-effect.effective.水 {
+    background: linear-gradient(45deg, transparent, rgba(33, 150, 243, 0.9), transparent);
+    box-shadow: 0 0 15px rgba(33, 150, 243, 0.8);
+    animation: slashAnimation 0.3s ease-out forwards, waterEffect 0.5s ease-out forwards;
+}
+*/
+
+/* スラッシュエフェクトアニメーション（実装保留中）
+@keyframes slashAnimation {
+    0% { 
+        opacity: 0;
+        width: 0;
+        height: 0;
+        transform: translate(-50%, -50%) rotate(45deg) scale(0.5);
+    }
+    40% { 
+        opacity: 1;
+        width: 5px;
+        height: 80%;
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+    100% { 
+        opacity: 0;
+        width: 5px;
+        height: 80%;
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+}
+
+@keyframes leafEffect {
+    0% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+    50% { 
+        transform: translate(-50%, -50%) rotate(50deg) scale(1.2);
+        filter: hue-rotate(10deg);
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+}
+
+@keyframes flameEffect {
+    0% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: brightness(1);
+    }
+    50% { 
+        transform: translate(-50%, -50%) rotate(40deg) scale(1.3);
+        filter: brightness(1.5) saturate(1.3);
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes earthEffect {
+    0% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+    25% { 
+        transform: translate(-50%, -50%) rotate(50deg) scale(1.1);
+    }
+    75% { 
+        transform: translate(-50%, -50%) rotate(40deg) scale(1.1);
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    }
+}
+
+@keyframes metalEffect {
+    0% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: brightness(1);
+    }
+    50% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1.2);
+        filter: brightness(2) contrast(1.5);
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: brightness(1);
+    }
+}
+
+@keyframes waterEffect {
+    0% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: blur(0px);
+    }
+    50% { 
+        transform: translate(-50%, -50%) rotate(50deg) scale(1.1);
+        filter: blur(1px) hue-rotate(10deg);
+    }
+    100% { 
+        transform: translate(-50%, -50%) rotate(45deg) scale(1);
+        filter: blur(0px);
+    }
+}
+*/
+
+
+/* ヘルプモーダル */
+.help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+}
+
+.help-content {
+    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+    border: 3px solid #4a90e2;
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.help-content h3 {
+    color: #4a90e2;
+    margin-bottom: 15px;
+    font-size: 24px;
+}
+
+.help-description {
+    color: #666;
+    margin-bottom: 25px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.effectiveness-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.effect-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(248, 249, 250, 0.8);
+    padding: 12px 16px;
+    border-radius: 10px;
+    border: 1px solid #dee2e6;
+}
+
+.attacker, .defender {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    color: white;
+    min-width: 50px;
+    text-align: center;
+}
+
+.attacker.木, .defender.木 { background: #4CAF50; }
+.attacker.火, .defender.火 { background: #F44336; }
+.attacker.土, .defender.土 { background: #8D6E63; }
+.attacker.金, .defender.金 { background: #FFC107; color: #333; }
+.attacker.水, .defender.水 { background: #2196F3; }
+
+.arrow {
+    font-size: 18px;
+    color: #666;
+    margin: 0 10px;
+}
+
+.damage {
+    background: #e74c3c;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.description {
+    color: #666;
+    font-size: 12px;
+    flex: 1;
+    text-align: right;
+}
+
+.help-close-btn {
+    background: #4a90e2;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background 0.3s ease;
+}
+
+.help-close-btn:hover {
+    background: #357abd;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+    .game-container {
+        grid-template-areas: 
+            "turn-order enemy-area"
+            "turn-order player-area"  
+            "player-control-zone player-control-zone";
+        grid-template-columns: 1fr 2fr;
+        grid-template-rows: auto auto auto;
+        gap: 8px;
+        padding: 8px;
+    }
+    
+    .turn-order-area {
+        grid-row: 1 / 3; /* 敵エリア行からプレイヤーエリア行まで */
+    }
+    
+    /* カードサイズ調整（はみ出し防止） */
+    .card-slot {
+        width: 70px;
+        height: 90px;
+    }
+    
+    .card {
+        width: 65px;
+        height: 85px;
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    .hand-cards .card {
+        width: 65px;
+        height: 85px;
+    }
+    
+    .card-name {
+        font-size: 9px;
+    }
+    
+    .card-cost {
+        width: 16px;
+        height: 16px;
+        font-size: 9px;
+    }
+    
+    .stat {
+        font-size: 9px;
+    }
+    
+    /* 横並びステータスのモバイル調整 */
+    .stat-icons {
+        font-size: 12px;
+        gap: 8px;
+    }
+    
+    .stat-values {
+        font-size: 10px;
+        gap: 8px;
+    }
+    
+    /* ボタン横並びキープ */
+    .controls {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    
+    .action-button {
+        flex: 1;
+        min-width: 80px;
+        padding: 8px 4px;
+        font-size: 12px;
+    }
+    
+    .player-info-header {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .info-badge {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    /* 統合コントロールパネルのモバイル調整 */
+    .control-panel {
+        bottom: 15px;
+        right: 15px;
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .control-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    /* ヘルプモーダルのモバイル調整 */
+    .help-content {
+        padding: 20px;
+        max-width: 95%;
+    }
+    
+    .help-content h3 {
+        font-size: 20px;
+    }
+    
+    .effectiveness-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .effect-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 4px;
+        text-align: center;
+        align-items: center;
+    }
+    
+    /* 説明は別行で表示 */
+    .description {
+        flex-basis: 100%;
+        text-align: center;
+        margin-top: 6px;
+        order: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .start-content {
+        padding: 20px;
+        width: 95%;
+    }
+    
+    .start-content h1 {
+        font-size: 24px;
+    }
+    
+    .game-container {
+        padding: 4px;
+        gap: 6px;
+        /* 同じ2列レイアウトを維持（行動順左側） */
+        grid-template-columns: 1fr 2fr;
+    }
+    
+    /* さらに小さなカードサイズ */
+    .card-slot {
+        width: 60px;
+        height: 80px;
+    }
+    
+    .card {
+        width: 55px;
+        height: 75px;
+        padding: 3px;
+        font-size: 9px;
+    }
+    
+    .hand-cards .card {
+        width: 55px;
+        height: 75px;
+        padding: 3px;
+    }
+    
+    .card-name {
+        font-size: 8px;
+    }
+    
+    .card-cost {
+        width: 14px;
+        height: 14px;
+        font-size: 8px;
+    }
+    
+    .stat {
+        font-size: 8px;
+    }
+    
+    /* 横並びステータスの小画面調整 */
+    .stat-icons {
+        font-size: 10px;
+        gap: 6px;
+    }
+    
+    .stat-values {
+        font-size: 9px;
+        gap: 6px;
+    }
+    
+    /* ボタンも小さく調整 */
+    .action-button {
+        padding: 6px 8px;
+        font-size: 11px;
+        min-width: 70px;
+    }
+    
+    .control-panel {
+        bottom: 10px;
+        right: 10px;
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .control-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
 }
