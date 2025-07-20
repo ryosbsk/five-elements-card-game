@@ -1542,5 +1542,47 @@ document.getElementById('help-modal').addEventListener('click', (e) => {
     }
 });
 
+// ヘルプタブ切り替え機能 🌸
+function initializeHelpTabs() {
+    console.log('🎯 ヘルプタブシステム初期化');
+    
+    const tabButtons = document.querySelectorAll('.help-tab-btn');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    
+    // タブボタンのクリックイベント
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            // SE再生: ボタン
+            SoundManager.play('button');
+            
+            const targetTab = button.getAttribute('data-tab');
+            console.log('🎯 タブ切り替え:', targetTab);
+            
+            // 全てのタブボタンからactiveクラスを削除
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            // 全てのタブパネルからactiveクラスを削除
+            tabPanels.forEach(panel => panel.classList.remove('active'));
+            
+            // クリックされたタブボタンをアクティブに
+            button.classList.add('active');
+            // 対応するタブパネルをアクティブに
+            const targetPanel = document.getElementById(targetTab + '-tab');
+            if (targetPanel) {
+                targetPanel.classList.add('active');
+                console.log('✅ タブ表示:', targetTab);
+            } else {
+                console.warn('⚠️ タブパネル未発見:', targetTab + '-tab');
+            }
+        });
+    });
+    
+    console.log('✅ ヘルプタブシステム初期化完了');
+}
+
 // ゲーム開始
 initializeGame();
+
+// ヘルプタブシステム初期化（DOM読み込み後）
+document.addEventListener('DOMContentLoaded', () => {
+    initializeHelpTabs();
+});

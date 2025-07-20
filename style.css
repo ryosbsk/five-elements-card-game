@@ -1109,6 +1109,133 @@ body {
     background: #357abd;
 }
 
+/* ヘルプタブシステム */
+.help-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+    gap: 2px;
+}
+
+.help-tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 12px 8px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #666;
+    text-align: center;
+}
+
+.help-tab-btn:hover {
+    background: rgba(74, 144, 226, 0.1);
+    color: #4a90e2;
+}
+
+.help-tab-btn.active {
+    background: #4a90e2;
+    color: white;
+    box-shadow: 0 2px 6px rgba(74, 144, 226, 0.3);
+}
+
+/* タブコンテンツ */
+.help-tab-content {
+    text-align: left;
+}
+
+.tab-panel {
+    display: none;
+    min-height: 300px;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.tab-panel h4 {
+    color: #4a90e2;
+    margin-bottom: 12px;
+    font-size: 16px;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 6px;
+}
+
+.tab-panel h5 {
+    color: #666;
+    margin: 12px 0 8px 0;
+    font-size: 14px;
+}
+
+/* ルールセクション */
+.rule-section {
+    background: rgba(248, 249, 250, 0.8);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid #4a90e2;
+}
+
+.rule-section p {
+    margin: 6px 0;
+    line-height: 1.5;
+    font-size: 14px;
+}
+
+.rule-section strong {
+    color: #333;
+    font-weight: 600;
+}
+
+/* 戦略セクション */
+.strategy-section ul {
+    margin: 8px 0 16px 20px;
+    padding: 0;
+}
+
+.strategy-section li {
+    margin: 6px 0;
+    line-height: 1.4;
+    font-size: 14px;
+    color: #555;
+}
+
+/* FAQセクション */
+.faq-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.faq-item {
+    background: rgba(248, 249, 250, 0.6);
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.faq-item h5 {
+    color: #28a745;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.faq-item p {
+    margin: 4px 0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.faq-item p strong {
+    color: #333;
+}
+
 /* レスポンシブデザイン */
 @media (max-width: 768px) {
     .game-container {
@@ -1238,6 +1365,30 @@ body {
         text-align: center;
         margin-top: 6px;
         order: 1;
+    }
+    
+    /* ヘルプタブのモバイル調整 */
+    .help-tabs {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    
+    .help-tab-btn {
+        font-size: 12px;
+        padding: 10px 6px;
+        min-width: 45%;
+    }
+    
+    .tab-panel {
+        min-height: 250px;
+    }
+    
+    .tab-panel h4 {
+        font-size: 15px;
+    }
+    
+    .rule-section p, .strategy-section li, .faq-item p {
+        font-size: 13px;
     }
 }
 

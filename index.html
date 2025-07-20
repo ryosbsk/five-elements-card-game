@@ -146,45 +146,145 @@
     <!-- ヘルプモーダル -->
     <div id="help-modal" class="help-modal" style="display: none;">
         <div class="help-content">
-            <h3>🌟 五行相剋相性表</h3>
-            <p class="help-description">攻撃属性が防御属性に効果的な場合、コスト1は+3ダメージ、コスト2は+5ダメージになります</p>
-            <div class="effectiveness-grid">
-                <div class="effect-row">
-                    <span class="attacker 木">木</span>
-                    <span class="arrow">→</span>
-                    <span class="defender 土">土</span>
-                    <span class="damage">1.5倍</span>
-                    <span class="description">木が土を突き破る</span>
-                </div>
-                <div class="effect-row">
-                    <span class="attacker 火">火</span>
-                    <span class="arrow">→</span>
-                    <span class="defender 金">金</span>
-                    <span class="damage">1.5倍</span>
-                    <span class="description">火が金属を溶かす</span>
-                </div>
-                <div class="effect-row">
-                    <span class="attacker 土">土</span>
-                    <span class="arrow">→</span>
-                    <span class="defender 水">水</span>
-                    <span class="damage">1.5倍</span>
-                    <span class="description">土が水を吸収</span>
-                </div>
-                <div class="effect-row">
-                    <span class="attacker 金">金</span>
-                    <span class="arrow">→</span>
-                    <span class="defender 木">木</span>
-                    <span class="damage">1.5倍</span>
-                    <span class="description">金属が木を切る</span>
-                </div>
-                <div class="effect-row">
-                    <span class="attacker 水">水</span>
-                    <span class="arrow">→</span>
-                    <span class="defender 火">火</span>
-                    <span class="damage">1.5倍</span>
-                    <span class="description">水が火を消す</span>
-                </div>
+            <h3>🌟 五行カードバトル ガイド</h3>
+            
+            <!-- タブナビゲーション -->
+            <div class="help-tabs">
+                <button class="help-tab-btn active" data-tab="basic-rules">📋 基本ルール</button>
+                <button class="help-tab-btn" data-tab="effectiveness">⚔️ 相剋表</button>
+                <button class="help-tab-btn" data-tab="strategy">💡 戦略ヒント</button>
+                <button class="help-tab-btn" data-tab="faq">❓ FAQ</button>
             </div>
+            
+            <!-- タブコンテンツエリア -->
+            <div class="help-tab-content">
+                
+                <!-- 📋 基本ルール タブ -->
+                <div id="basic-rules-tab" class="tab-panel active">
+                    <h4>🎯 ゲームの目標</h4>
+                    <div class="rule-section">
+                        <p><strong>勝利条件:</strong> 敵カード合計5コスト撃破 または 敵フィールド全滅</p>
+                        <p><strong>引き分け:</strong> 両軍フィールドが同時に全滅</p>
+                    </div>
+                    
+                    <h4>⚔️ バトルシステム</h4>
+                    <div class="rule-section">
+                        <p><strong>3vs3バトル:</strong> 最大3枚のカードでフィールドを構築</p>
+                        <p><strong>ターン制:</strong> カードのスピード値が高い順に行動</p>
+                        <p><strong>同スピード:</strong> 同時に攻撃し、相打ちになる</p>
+                    </div>
+                    
+                    <h4>💎 PPシステム</h4>
+                    <div class="rule-section">
+                        <p><strong>初期PP:</strong> 1PP、手札3枚でスタート</p>
+                        <p><strong>PP増加:</strong> 毎ターン+1PP（最大5PP）</p>
+                        <p><strong>カード配置:</strong> 手札からカードをPPコストで配置</p>
+                    </div>
+                </div>
+                
+                <!-- ⚔️ 相剋表 タブ -->
+                <div id="effectiveness-tab" class="tab-panel">
+                    <h4>🌟 五行相剋システム</h4>
+                    <p class="help-description">攻撃属性が防御属性に効果的な場合、<strong>コスト1は+3ダメージ、コスト2は+5ダメージ</strong>になります</p>
+                    
+                    <div class="effectiveness-grid">
+                        <div class="effect-row">
+                            <span class="attacker 木">木</span>
+                            <span class="arrow">→</span>
+                            <span class="defender 土">土</span>
+                            <span class="damage">+3/+5</span>
+                            <span class="description">根が大地を割る</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="attacker 火">火</span>
+                            <span class="arrow">→</span>
+                            <span class="defender 金">金</span>
+                            <span class="damage">+3/+5</span>
+                            <span class="description">炎が金属を溶かす</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="attacker 土">土</span>
+                            <span class="arrow">→</span>
+                            <span class="defender 水">水</span>
+                            <span class="damage">+3/+5</span>
+                            <span class="description">大地が水を吸い込む</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="attacker 金">金</span>
+                            <span class="arrow">→</span>
+                            <span class="defender 木">木</span>
+                            <span class="damage">+3/+5</span>
+                            <span class="description">刃が木を断つ</span>
+                        </div>
+                        <div class="effect-row">
+                            <span class="attacker 水">水</span>
+                            <span class="arrow">→</span>
+                            <span class="defender 火">火</span>
+                            <span class="damage">+3/+5</span>
+                            <span class="description">水が火を鎮める</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 💡 戦略ヒント タブ -->
+                <div id="strategy-tab" class="tab-panel">
+                    <h4>🧠 基本戦術</h4>
+                    <div class="strategy-section">
+                        <h5>💎 PP管理</h5>
+                        <ul>
+                            <li>序盤はコスト1カードで手札を温存</li>
+                            <li>PP2-3でコスト2カードの投入を検討</li>
+                            <li>一度に全カードを使わず、継続戦を意識</li>
+                        </ul>
+                        
+                        <h5>⚔️ 相剋活用</h5>
+                        <ul>
+                            <li>敵の属性を見て有利なカードを配置</li>
+                            <li>コスト2なら+5の大ダメージを狙える</li>
+                            <li>劣勢時は相剋で逆転を狙う</li>
+                        </ul>
+                        
+                        <h5>⚡ スピード戦術</h5>
+                        <ul>
+                            <li>高スピードカードで先制攻撃</li>
+                            <li>同スピードなら相打ち覚悟で攻撃</li>
+                            <li>低スピードでも高耐久なら有効</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- ❓ FAQ タブ -->
+                <div id="faq-tab" class="tab-panel">
+                    <h4>❓ よくある質問</h4>
+                    <div class="faq-section">
+                        <div class="faq-item">
+                            <h5>🎮 基本操作</h5>
+                            <p><strong>Q:</strong> カードはどうやって使うの？</p>
+                            <p><strong>A:</strong> 手札のカードをクリックすると、フィールドの空きスロットに配置されます。</p>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <h5>⚔️ 戦闘について</h5>
+                            <p><strong>Q:</strong> 攻撃はいつ始まるの？</p>
+                            <p><strong>A:</strong> 「ターン終了」ボタンを押すと、スピード順に自動で戦闘が進行します。</p>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <h5>💎 PPについて</h5>
+                            <p><strong>Q:</strong> PPが足りない時は？</p>
+                            <p><strong>A:</strong> 「行動スキップ」でターンを進めてPPを増やすか、低コストカードを使いましょう。</p>
+                        </div>
+                        
+                        <div class="faq-item">
+                            <h5>🏆 勝利条件</h5>
+                            <p><strong>Q:</strong> どうなったら勝ち？</p>
+                            <p><strong>A:</strong> 敵カード合計5コスト撃破 または 敵フィールドを全滅させると勝利です。</p>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
             <button id="help-close" class="help-close-btn">閉じる</button>
         </div>
     </div>
