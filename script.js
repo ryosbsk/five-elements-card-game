@@ -166,11 +166,11 @@ const cardData = [
 let gameState = {
     phase: 'draw',
     turn: 1,
-    playerPP: 1,
-    maxPP: 1,
-    enemyPP: 1,
+    playerPP: 2,
+    maxPP: 2,
+    enemyPP: 2,
     gameOver: false, // ゲーム終了フラグ
-    enemyMaxPP: 1,
+    enemyMaxPP: 2,
     playerHand: [],
     playerDeck: [],
     enemyHand: [],
@@ -572,14 +572,128 @@ function calculateElementalDamage(attacker, target) {
     };
 }
 
+// 同速相打ち判定とダメージ処理
+function processSimultaneousCombat(attacker, target) {
+    console.log('⚡ 同速相打ち発生:', `${attacker.name}(速度:${attacker.speed}) vs ${target.name}(速度:${target.speed})`);
+    
+    // 両方のダメージを計算
+    const attackerDamage = calculateElementalDamage(attacker, target);
+    const counterDamage = calculateElementalDamage(target, attacker);
+    
+    // 元のHP記録
+    const attackerOriginalHp = attacker.hp;
+    const targetOriginalHp = target.hp;
+    
+    // 同時ダメージ適用
+    attacker.hp -= counterDamage.damage;
+    target.hp -= attackerDamage.damage;
+    
+    console.log('💥 相打ちダメージ詳細:', {
+        [`${attacker.name}が与えるダメージ`]: `${attackerDamage.damage} (${attackerDamage.isEffective ? '効果的' : '通常'})`,
+        [`${target.name}が与えるダメージ`]: `${counterDamage.damage} (${counterDamage.isEffective ? '効果的' : '通常'})`,
+        [`${attacker.name}のHP`]: `${attackerOriginalHp} → ${attacker.hp}`,
+        [`${target.name}のHP`]: `${targetOriginalHp} → ${target.hp}`
+    });
+    
+    // 両方とも行動済みにマーク
+    attacker.hasActed = true;
+    target.hasActed = true;
+    
+    // SE再生: 攻撃
+    SoundManager.play('attack');
+    
+    // 相打ちエフェクト表示
+    showSlashEffect(target, attackerDamage.isEffective, attacker.element);
+    showSlashEffect(attacker, counterDamage.isEffective, target.element);
+    
+    // ダメージアニメーション（少し遅延して同時表示）
+    setTimeout(() => {
+        showDamageAnimation(target, attackerDamage, attacker.element);
+        showDamageAnimation(attacker, counterDamage, target.element);
+    }, 150);
+    
+    // 相打ちメッセージ
+    let message = '⚡ 相打ち！ ';
+    if (attackerDamage.isEffective || counterDamage.isEffective) {
+        const effectMessages = [];
+        if (attackerDamage.isEffective) effectMessages.push(attackerDamage.message);
+        if (counterDamage.isEffective) effectMessages.push(counterDamage.message);
+        message += effectMessages.join(' / ') + ' ';
+    }
+    message += `${attacker.name}⚔️${target.name} 同時${attackerDamage.damage}/${counterDamage.damage}ダメージ！`;
+    showMessage(message);
+    
+    // 撃破判定（同時撃破の可能性）
+    const attackerDefeated = attacker.hp <= 0;
+    const targetDefeated = target.hp <= 0;
+    
+    return {
+        attackerDefeated,
+        targetDefeated,
+        attackerDamage: attackerDamage.damage,
+        counterDamage: counterDamage.damage
+    };
+}
+
 function executeAttack(attacker, target) {
     console.log('⚔️ 攻撃実行:', attacker.name, '→', target.name);
     console.log('💥 戦闘詳細:', {
-        攻撃者: `${attacker.name} (${attacker.element}属性, 攻撃力: ${attacker.attack})`,
-        対象: `${target.name} (${target.element}属性, HP: ${target.hp})`
+        攻撃者: `${attacker.name} (${attacker.element}属性, 攻撃力: ${attacker.attack}, 速度: ${attacker.speed})`,
+        対象: `${target.name} (${target.element}属性, HP: ${target.hp}, 速度: ${target.speed})`
     });
     
     if (gameState.attackMode) {
+        // 同速判定：両方とも同じ速度なら相打ち
+        if (attacker.speed === target.speed && !target.hasActed) {
+            console.log('⚡ 同速度検出 - 相打ち処理開始');
+            const combatResult = processSimultaneousCombat(attacker, target);
+            
+            // 撃破処理（アニメーション後）
+            setTimeout(() => {
+                let defeatedCards = [];
+                if (combatResult.attackerDefeated && attacker.hp <= 0) {
+                    defeatedCards.push(attacker);
+                }
+                if (combatResult.targetDefeated && target.hp <= 0) {
+                    defeatedCards.push(target);
+                }
+                
+                // 撃破処理を順次実行
+                defeatedCards.forEach(card => {
+                    console.log('💀 相打ち撃破:', card.name);
+                    defeatCard(card);
+                });
+                
+                // 戦闘継続チェック
+                setTimeout(() => {
+                    const victoryCheck = checkVictoryCondition();
+                    if (victoryCheck.result) {
+                        gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
+                        return;
+                    }
+                    
+                    if (checkBattleEnd()) {
+                        nextPhase();
+                    } else {
+                        const nextCard = gameState.turnOrder.find(card => !card.hasActed);
+                        if (nextCard && !nextCard.isPlayer) {
+                            enemyAutoAttack(nextCard);
+                        }
+                    }
+                }, 200);
+            }, 1200);
+            
+            // 攻撃モード解除
+            gameState.attackMode = false;
+            gameState.currentAttacker = null;
+            gameState.justStartedAttack = false;
+            document.removeEventListener('click', handleAttackCancelClick);
+            updateDisplay();
+            updateTurnOrderDisplay();
+            return;
+        }
+        
+        // 通常攻撃（速度が異なる、または対象が既に行動済み）
         const damageInfo = calculateElementalDamage(attacker, target);
         const originalHp = target.hp;
         target.hp -= damageInfo.damage;
@@ -698,6 +812,52 @@ function enemyAutoAttack(enemyCard) {
             console.log('🤖 AI戦略: ランダム選択 →', target.name, '(HP:', target.hp, ')');
         }
         
+        // 同速判定：敵と対象が同じ速度で、対象が未行動なら相打ち
+        if (enemyCard.speed === target.speed && !target.hasActed) {
+            console.log('⚡ 敵AI同速度検出 - 相打ち処理開始');
+            const combatResult = processSimultaneousCombat(enemyCard, target);
+            
+            // 撃破処理（アニメーション後）
+            setTimeout(() => {
+                let defeatedCards = [];
+                if (combatResult.attackerDefeated && enemyCard.hp <= 0) {
+                    defeatedCards.push(enemyCard);
+                }
+                if (combatResult.targetDefeated && target.hp <= 0) {
+                    defeatedCards.push(target);
+                }
+                
+                // 撃破処理を順次実行
+                defeatedCards.forEach(card => {
+                    console.log('💀 敵AI相打ち撃破:', card.name);
+                    defeatCard(card);
+                });
+                
+                // 戦闘継続チェック
+                setTimeout(() => {
+                    const victoryCheck = checkVictoryCondition();
+                    if (victoryCheck.result) {
+                        gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
+                        return;
+                    }
+                    
+                    if (checkBattleEnd()) {
+                        nextPhase();
+                    } else {
+                        const nextCard = gameState.turnOrder.find(card => !card.hasActed);
+                        if (nextCard && !nextCard.isPlayer) {
+                            enemyAutoAttack(nextCard);
+                        }
+                    }
+                }, 200);
+            }, 1200);
+            
+            updateDisplay();
+            updateTurnOrderDisplay();
+            return;
+        }
+        
+        // 通常攻撃（速度が異なる、または対象が既に行動済み）
         const damageInfo = calculateElementalDamage(enemyCard, target);
         const originalHp = target.hp;
         target.hp -= damageInfo.damage;
@@ -951,24 +1111,65 @@ function enemyAISummon() {
     console.log('🃏 敵の手札:', gameState.enemyHand.map(c => `${c.name}(コスト:${c.cost})`));
     
     if (gameState.enemyHand.length > 0) {
-        // コストが高い順にソート
-        const sortedCards = gameState.enemyHand.sort((a, b) => b.cost - a.cost);
-        console.log('📈 召喚優先順位(コスト降順):', sortedCards.map(c => `${c.name}(${c.cost})`));
+        const availableCards = gameState.enemyHand.filter(card => card.cost <= gameState.enemyPP);
         const summonedCards = [];
         
-        // PPが続く限り、コストの高いカードから順番に召喚
-        for (const card of sortedCards) {
-            if (gameState.enemyPP >= card.cost && hasEmptySlot(gameState.enemyField)) {
-                const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
-                console.log('🃏 敵カード召喚:', card.name, `(コスト:${card.cost}, スロット:${emptyIndex + 1}, 残りPP:${gameState.enemyPP}→${gameState.enemyPP - card.cost})`);
-                
-                gameState.enemyField[emptyIndex] = card;
-                gameState.enemyPP -= card.cost;
-                gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
-                summonedCards.push(card.name);
-            } else {
-                const reason = gameState.enemyPP < card.cost ? 'PP不足' : 'フィールド満杯';
-                console.log('❌ 召喚できません:', card.name, `(理由:${reason})`);
+        // 2PP効率運用戦略
+        const cost2Cards = availableCards.filter(c => c.cost === 2);
+        const cost1Cards = availableCards.filter(c => c.cost === 1);
+        
+        console.log('🎯 AI戦略分析:', {
+            '利用可能PP': gameState.enemyPP,
+            'コスト2選択肢': cost2Cards.length + '枚',
+            'コスト1選択肢': cost1Cards.length + '枚'
+        });
+        
+        // 戦略1: 2コストカード優先（高効率）
+        if (cost2Cards.length > 0 && gameState.enemyPP >= 2 && hasEmptySlot(gameState.enemyField)) {
+            const bestCost2 = cost2Cards.sort((a, b) => (b.attack + b.hp) - (a.attack + a.hp))[0];
+            const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
+            
+            console.log('⭐ AI戦略: 2コスト単体重視 →', bestCost2.name);
+            gameState.enemyField[emptyIndex] = bestCost2;
+            gameState.enemyPP -= bestCost2.cost;
+            gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== bestCost2.id);
+            summonedCards.push(bestCost2.name);
+        }
+        // 戦略2: 1+1コスト戦略（物量作戦）
+        else if (cost1Cards.length >= 2 && gameState.enemyPP >= 2) {
+            const sortedCost1 = cost1Cards.sort((a, b) => (b.attack + b.hp) - (a.attack + a.hp));
+            
+            console.log('⚡ AI戦略: 1+1コスト物量作戦');
+            for (let i = 0; i < Math.min(2, sortedCost1.length); i++) {
+                if (gameState.enemyPP >= 1 && hasEmptySlot(gameState.enemyField)) {
+                    const card = sortedCost1[i];
+                    const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
+                    
+                    gameState.enemyField[emptyIndex] = card;
+                    gameState.enemyPP -= card.cost;
+                    gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
+                    summonedCards.push(card.name);
+                }
+            }
+        }
+        // 戦略3: 残りPPで可能な限り召喚（フォールバック）
+        else {
+            console.log('🔄 AI戦略: 残りPP最大活用');
+            const remainingCards = gameState.enemyHand.filter(card => card.cost <= gameState.enemyPP);
+            const sortedRemaining = remainingCards.sort((a, b) => b.cost - a.cost);
+            
+            for (const card of sortedRemaining) {
+                if (gameState.enemyPP >= card.cost && hasEmptySlot(gameState.enemyField)) {
+                    const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
+                    
+                    gameState.enemyField[emptyIndex] = card;
+                    gameState.enemyPP -= card.cost;
+                    gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
+                    summonedCards.push(card.name);
+                } else {
+                    const reason = gameState.enemyPP < card.cost ? 'PP不足' : 'フィールド満杯';
+                    console.log('❌ 召喚できません:', card.name, `(理由:${reason})`);
+                }
             }
         }
         
@@ -1156,7 +1357,7 @@ function generateStartingHand(deck) {
     if (cost1Cards.length === 0) {
         console.error('❌ デッキにコスト1カードがありません');
         // フォールバック：通常のランダム手札
-        return deck.slice(0, 3);
+        return deck.slice(0, 4);
     }
     
     console.log('🎴 手札生成開始:', {
@@ -1169,11 +1370,11 @@ function generateStartingHand(deck) {
     const guaranteedCost1 = cost1Cards[Math.floor(Math.random() * cost1Cards.length)];
     const hand = [guaranteedCost1];
     
-    // 残り2枚をランダム選択（デッキ全体から、保証したカードを除く）
+    // 残り3枚をランダム選択（デッキ全体から、保証したカードを除く）
     const remainingDeck = deck.filter(card => card.id !== guaranteedCost1.id);
     const shuffledRemaining = shuffleArray(remainingDeck);
     
-    for (let i = 0; i < 2 && i < shuffledRemaining.length; i++) {
+    for (let i = 0; i < 3 && i < shuffledRemaining.length; i++) {
         hand.push(shuffledRemaining[i]);
     }
     
