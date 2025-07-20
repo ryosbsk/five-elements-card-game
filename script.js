@@ -136,6 +136,15 @@ const SoundManager = {
     }
 };
 
+// 五行相剋システム
+const elementalEffectiveness = {
+    木: "土",  // 木が土を突き破る
+    火: "金",  // 火が金属を溶かす  
+    土: "水",  // 土が水を吸収
+    金: "木",  // 金属が木を切る
+    水: "火"   // 水が火を消す
+};
+
 // カードデータ
 const cardData = [
     // コスト1カード
@@ -160,6 +169,7 @@ let gameState = {
     playerPP: 1,
     maxPP: 1,
     enemyPP: 1,
+    gameOver: false, // ゲーム終了フラグ
     enemyMaxPP: 1,
     playerHand: [],
     playerDeck: [],
@@ -196,8 +206,8 @@ const elements = {
     startScreen: document.getElementById('start-screen'),
     startBtn: document.getElementById('start-game-btn'),
     gameContainer: document.getElementById('game-container'),
-    // 音響コントロール要素
-    audioControls: document.getElementById('audio-controls'),
+    // 統合コントロールパネル要素
+    controlPanel: document.getElementById('control-panel'),
     audioToggle: document.getElementById('audio-toggle'),
     audioPanel: document.getElementById('audio-panel'),
     audioClose: document.getElementById('audio-close'),
@@ -237,10 +247,13 @@ function createCardElement(card) {
             <span class="card-name">${card.name}</span>
             <span class="card-cost">${card.cost}</span>
         </div>
-        <div class="card-stats">
-            <div class="stat hp">❤️${card.hp}</div>
-            <div class="stat attack">⚔️${card.attack}</div>
-            <div class="stat speed">⚡${card.speed}</div>
+        <div class="card-stats-horizontal">
+            <div class="stat-icons">❤️ ⚔️ ⚡</div>
+            <div class="stat-values">
+                <span class="stat-value hp">${card.hp}</span>
+                <span class="stat-value attack">${card.attack}</span>
+                <span class="stat-value speed">${card.speed}</span>
+            </div>
         </div>
     `;
     
@@ -305,6 +318,10 @@ function updateHandDisplay() {
         
         // カードクリックイベント
         cardElement.addEventListener('click', () => {
+            if (gameState.gameOver) {
+                console.log('🚫 ゲーム終了済み - カード選択無効');
+                return;
+            }
             if (gameState.phase === 'summon' && canPlayCard(card)) {
                 playCard(card);
             }
@@ -332,6 +349,10 @@ function updateFieldDisplay() {
                 const currentTurnCard = gameState.turnOrder.find(card => !card.hasActed);
                 if (currentTurnCard && currentTurnCard.id === gameState.playerField[i].id) {
                     cardElement.addEventListener('click', (event) => {
+                        if (gameState.gameOver) {
+                            console.log('🚫 ゲーム終了済み - 攻撃選択無効');
+                            return;
+                        }
                         console.log('🎯 プレイヤーカードクリック:', gameState.playerField[i].name, 'で攻撃開始準備！');
                         event.stopPropagation(); // 親要素への伝播を防止
                         if (!gameState.attackMode) {
@@ -363,6 +384,10 @@ function updateFieldDisplay() {
             if (gameState.attackMode) {
                 cardElement.classList.add('selectable-target');
                 cardElement.addEventListener('click', (event) => {
+                    if (gameState.gameOver) {
+                        console.log('🚫 ゲーム終了済み - 攻撃実行無効');
+                        return;
+                    }
                     console.log('🎯 敵カード選択:', gameState.enemyField[i].name, '→ 攻撃実行します！');
                     event.stopPropagation(); // 親要素への伝播を防止
                     event.preventDefault(); // デフォルトイベントを防止
@@ -527,30 +552,70 @@ function cancelAttack() {
     updateDisplay();
 }
 
+// 五行相剋ダメージ計算
+function calculateElementalDamage(attacker, target) {
+    const baseDamage = Math.max(1, attacker.attack);
+    
+    // 相剋関係をチェック
+    if (elementalEffectiveness[attacker.element] === target.element) {
+        return {
+            damage: Math.floor(baseDamage * 1.5),
+            isEffective: true,
+            message: `${attacker.element}が${target.element}に効果的！`
+        };
+    }
+    
+    return {
+        damage: baseDamage,
+        isEffective: false,
+        message: null
+    };
+}
+
 function executeAttack(attacker, target) {
     console.log('⚔️ 攻撃実行:', attacker.name, '→', target.name);
     console.log('💥 戦闘詳細:', {
-        攻撃者: `${attacker.name} (攻撃力: ${attacker.attack})`,
-        対象: `${target.name} (HP: ${target.hp}→${target.hp - attacker.attack})`
+        攻撃者: `${attacker.name} (${attacker.element}属性, 攻撃力: ${attacker.attack})`,
+        対象: `${target.name} (${target.element}属性, HP: ${target.hp})`
     });
     
     if (gameState.attackMode) {
-        const damage = Math.max(1, attacker.attack);
+        const damageInfo = calculateElementalDamage(attacker, target);
         const originalHp = target.hp;
-        target.hp -= damage;
+        target.hp -= damageInfo.damage;
         attacker.hasActed = true;
         
-        console.log(`💢 ダメージ処理: ${damage}ダメージ → HP ${originalHp}→${target.hp}`);
+        console.log(`💢 ダメージ処理: ${damageInfo.damage}ダメージ (効果的: ${damageInfo.isEffective}) → HP ${originalHp}→${target.hp}`);
         
         // SE再生: 攻撃
         SoundManager.play('attack');
         
-        showMessage(`${attacker.name}が${target.name}に${damage}ダメージ！`);
+        // スラッシュエフェクト表示（攻撃開始）
+        showSlashEffect(target, damageInfo.isEffective, attacker.element);
         
-        // HPが0以下になったらカードを撃破
-        if (target.hp <= 0) {
-            console.log('💀 カード撃破:', target.name, 'のHPが0以下になりました');
-            defeatCard(target);
+        // ダメージアニメーション表示（少し遅延）
+        setTimeout(() => {
+            showDamageAnimation(target, damageInfo, attacker.element);
+        }, 150);
+        
+        // 相剋効果に応じたメッセージ表示
+        if (damageInfo.isEffective) {
+            showMessage(`🔥 ${damageInfo.message} ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+        } else {
+            showMessage(`⚔️ ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+        }
+        
+        // HPチェックは即座に行い、撃破処理はアニメーション後に遅延実行
+        const isDefeated = target.hp <= 0;
+        if (isDefeated) {
+            console.log('💀 カード撃破予定:', target.name, 'のHPが0以下 → アニメーション後に撃破処理');
+            
+            // ダメージアニメーション完了後にカード撃破処理
+            setTimeout(() => {
+                if (target.hp <= 0) { // 念のため再チェック
+                    defeatCard(target);
+                }
+            }, 1200); // ダメージアニメーション時間(1000ms) + 余裕(200ms)
         } else {
             console.log('✅ カード生存:', target.name, `(残りHP: ${target.hp})`);
         }
@@ -565,18 +630,27 @@ function executeAttack(attacker, target) {
         updateDisplay();
         updateTurnOrderDisplay();
         
-        // 戦闘継続チェック
-        setTimeout(() => {
-            if (checkBattleEnd()) {
-                nextPhase();
-            } else {
-                // 次の行動者がAIの場合、自動で行動
-                const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-                if (nextCard && !nextCard.isPlayer) {
-                    enemyAutoAttack(nextCard);
+        // 撃破しなかった場合のみ戦闘継続チェック
+        if (!isDefeated) {
+            setTimeout(() => {
+                const victoryCheck = checkVictoryCondition();
+                if (victoryCheck.result) {
+                    gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
+                    return;
                 }
-            }
-        }, 1000);
+                
+                // 戦闘継続チェック
+                if (checkBattleEnd()) {
+                    nextPhase();
+                } else {
+                    // 次の行動者がAIの場合、自動で行動
+                    const nextCard = gameState.turnOrder.find(card => !card.hasActed);
+                    if (nextCard && !nextCard.isPlayer) {
+                        enemyAutoAttack(nextCard);
+                    }
+                }
+            }, 500);
+        }
     } else {
         console.log('⚠️ 攻撃モードではありません - executeAttack処理をスキップ');
     }
@@ -624,22 +698,42 @@ function enemyAutoAttack(enemyCard) {
             console.log('🤖 AI戦略: ランダム選択 →', target.name, '(HP:', target.hp, ')');
         }
         
-        const damage = Math.max(1, enemyCard.attack);
+        const damageInfo = calculateElementalDamage(enemyCard, target);
         const originalHp = target.hp;
-        target.hp -= damage;
+        target.hp -= damageInfo.damage;
         enemyCard.hasActed = true;
         
-        console.log('⚔️ 敵攻撃実行:', `${enemyCard.name} → ${target.name}`, `(${damage}ダメージ, HP:${originalHp}→${target.hp})`);
+        console.log('⚔️ 敵攻撃実行:', `${enemyCard.name} → ${target.name}`, `(${damageInfo.damage}ダメージ, 効果的: ${damageInfo.isEffective}, HP:${originalHp}→${target.hp})`);
         
         // SE再生: 敵の攻撃
         SoundManager.play('attack');
         
-        showMessage(`敵の${enemyCard.name}が${target.name}に${damage}ダメージ！`);
+        // スラッシュエフェクト表示（攻撃開始）
+        showSlashEffect(target, damageInfo.isEffective, enemyCard.element);
         
-        // HPが0以下になったらカードを撃破
-        if (target.hp <= 0) {
-            console.log('💀 敵の攻撃により撃破:', target.name);
-            defeatCard(target);
+        // ダメージアニメーション表示（少し遅延）
+        setTimeout(() => {
+            showDamageAnimation(target, damageInfo, enemyCard.element);
+        }, 150);
+        
+        // 相剋効果に応じたメッセージ表示
+        if (damageInfo.isEffective) {
+            showMessage(`🔥 ${damageInfo.message} 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+        } else {
+            showMessage(`⚔️ 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+        }
+        
+        // HPチェックは即座に行い、撃破処理はアニメーション後に遅延実行
+        const isDefeated = target.hp <= 0;
+        if (isDefeated) {
+            console.log('💀 敵の攻撃により撃破予定:', target.name, 'のHPが0以下 → アニメーション後に撃破処理');
+            
+            // ダメージアニメーション完了後にカード撃破処理
+            setTimeout(() => {
+                if (target.hp <= 0) { // 念のため再チェック
+                    defeatCard(target);
+                }
+            }, 1200); // ダメージアニメーション時間(1000ms) + 余裕(200ms)
         } else {
             console.log('✅ カード生存:', target.name, `(残りHP: ${target.hp})`);
         }
@@ -647,18 +741,27 @@ function enemyAutoAttack(enemyCard) {
         updateDisplay();
         updateTurnOrderDisplay();
         
-        // 戦闘継続チェック
-        setTimeout(() => {
-            if (checkBattleEnd()) {
-                nextPhase();
-            } else {
-                // 次の行動者がいれば続行
-                const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-                if (nextCard && !nextCard.isPlayer) {
-                    enemyAutoAttack(nextCard);
+        // 撃破しなかった場合のみ戦闘継続チェック
+        if (!isDefeated) {
+            setTimeout(() => {
+                const victoryCheck = checkVictoryCondition();
+                if (victoryCheck.result) {
+                    gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
+                    return;
                 }
-            }
-        }, 1500);
+                
+                // 戦闘継続チェック
+                if (checkBattleEnd()) {
+                    nextPhase();
+                } else {
+                    // 次の行動者がいれば続行
+                    const nextCard = gameState.turnOrder.find(card => !card.hasActed);
+                    if (nextCard && !nextCard.isPlayer) {
+                        enemyAutoAttack(nextCard);
+                    }
+                }
+            }, 500);
+        }
     }
 }
 
@@ -686,6 +789,29 @@ function defeatCard(card) {
     // 行動順からも削除
     gameState.turnOrder = gameState.turnOrder.filter(c => c.id !== card.id);
     updateTurnOrderDisplay();
+    updateDisplay(); // UI更新
+    
+    // 撃破後に勝敗判定を実行
+    setTimeout(() => {
+        const victoryCheck = checkVictoryCondition();
+        if (victoryCheck.result) {
+            gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
+            return;
+        }
+        
+        // 戦闘継続チェック
+        if (checkBattleEnd()) {
+            nextPhase();
+        } else {
+            // 次の行動者に移行
+            const nextCard = gameState.turnOrder.find(card => !card.hasActed);
+            if (nextCard && !nextCard.isPlayer) {
+                enemyAutoAttack(nextCard);
+            }
+        }
+    }, 200); // 少し遅延して勝敗判定
+    
+    return false; // ゲーム続行
 }
 
 function checkBattleEnd() {
@@ -775,8 +901,10 @@ function prepareBattle() {
 }
 
 function endTurn() {
-    // 勝敗判定
-    if (checkWinCondition()) {
+    // 勝敗判定（ターン終了時にガラ空きチェックのみ）
+    const victoryCheck = checkVictoryCondition();
+    if (victoryCheck.result) {
+        gameOver(victoryCheck.result, victoryCheck.message, victoryCheck.sound);
         return;
     }
     
@@ -860,54 +988,199 @@ function enemyAISummon() {
     }
 }
 
-function checkWinCondition() {
-    // プレイヤーの勝利条件：敵カード5コスト撃破
+// 統合勝敗判定（撃破時に即座実行）
+function checkVictoryCondition() {
+    console.log('🔍 勝敗判定:', {
+        プレイヤー撃破コスト: gameState.defeatedCost,
+        敵撃破コスト: gameState.enemyDefeatedCost,
+        プレイヤー場: gameState.playerField.filter(c => c !== null).length,
+        プレイヤー手札: gameState.playerHand.length,
+        敵場: gameState.enemyField.filter(c => c !== null).length,
+        敵手札: gameState.enemyHand.length
+    });
+    
+    // 1. 撃破コスト優先チェック（最優先）
     if (gameState.defeatedCost >= 5) {
-        setTimeout(() => {
-            // SE再生: 勝利
-            SoundManager.play('victory');
-            showMessage('🎉 勝利！おめでとうございます！🎉');
-            gameState.phase = 'gameover';
-            elements.endTurnBtn.disabled = true;
-        }, 1000);
-        return true;
+        return { 
+            result: "player_victory", 
+            message: "🎉 勝利！5コスト撃破で勝利です！🎉",
+            sound: "victory"
+        };
     }
-    
-    // 敵の勝利条件：プレイヤーカード5コスト撃破
     if (gameState.enemyDefeatedCost >= 5) {
-        setTimeout(() => {
-            // SE再生: 敗北
-            SoundManager.play('defeat');
-            showMessage('💀 敗北！敵に5コスト分撃破されました...');
-            gameState.phase = 'gameover';
-            elements.endTurnBtn.disabled = true;
-        }, 1000);
-        return true;
+        return { 
+            result: "enemy_victory", 
+            message: "💀 敗北！敵に5コスト分撃破されました...",
+            sound: "defeat"
+        };
     }
     
-    // 場が空になった場合の敗北
-    const playerCards = gameState.playerField.filter(c => c !== null);
-    const enemyCards = gameState.enemyField.filter(c => c !== null);
+    // 2. ガラ空きチェック（フィールドカードのみ、手札は除外）
+    const playerCardsOnField = gameState.playerField.filter(c => c !== null);
+    const enemyCardsOnField = gameState.enemyField.filter(c => c !== null);
     
-    if (playerCards.length === 0 && gameState.playerHand.length === 0) {
-        setTimeout(() => {
-            showMessage('💀 敗北！すべてのカードが撃破されました...');
-            gameState.phase = 'gameover';
-            elements.endTurnBtn.disabled = true;
-        }, 1000);
-        return true;
+    if (playerCardsOnField.length === 0) {
+        return { 
+            result: "player_defeat", 
+            message: "💀 敗北！フィールドが空になりました...",
+            sound: "defeat"
+        };
+    }
+    if (enemyCardsOnField.length === 0) {
+        return { 
+            result: "enemy_defeat", 
+            message: "🎉 勝利！敵のフィールドが空になりました！🎉",
+            sound: "victory"
+        };
     }
     
-    if (enemyCards.length === 0 && gameState.enemyHand.length === 0) {
-        setTimeout(() => {
-            showMessage('🎉 勝利！敵のカードをすべて撃破しました！🎉');
-            gameState.phase = 'gameover';
-            elements.endTurnBtn.disabled = true;
-        }, 1000);
-        return true;
+    return { result: null };
+}
+
+// ゲーム終了処理
+function gameOver(result, message, sound) {
+    console.log('🎮 ゲーム終了:', result, message);
+    console.log('🔍 ゲーム終了時の状態:', {
+        プレイヤー勝利ポイント: gameState.defeatedCost + '/5',
+        敵勝利ポイント: gameState.enemyDefeatedCost + '/5',
+        プレイヤーフィールド: gameState.playerField.filter(c => c !== null).length + '枚',
+        敵フィールド: gameState.enemyField.filter(c => c !== null).length + '枚',
+        ターン: gameState.turn,
+        フェーズ: gameState.phase
+    });
+    
+    gameState.gameOver = true; // ゲーム終了フラグを設定
+    gameState.phase = 'gameover';
+    elements.endTurnBtn.disabled = true;
+    
+    // 攻撃モードを解除
+    if (gameState.attackMode) {
+        gameState.attackMode = false;
+        gameState.currentAttacker = null;
+        console.log('🚫 攻撃モード強制解除（ゲーム終了）');
     }
     
-    return false;
+    // 全イベントリスナーを削除
+    document.removeEventListener('click', handleAttackCancelClick);
+    
+    setTimeout(() => {
+        // SE再生
+        SoundManager.play(sound);
+        showMessage(message);
+        updateDisplay(); // UI状態を更新
+        console.log('✅ ゲーム終了処理完了');
+    }, 500);
+}
+
+// スラッシュエフェクト表示（実装保留）
+function showSlashEffect(target, isEffective = false, attackerElement = null) {
+    // スラッシュエフェクトの実装は保留中
+    // ダメージエフェクトで十分な視覚的フィードバックを提供
+    console.log('⚔️ スラッシュエフェクト（保留中）:', target.name, '効果的:', isEffective);
+    return;
+    
+    /* 実装保留中のコード
+    const targetElement = document.querySelector(`[data-card-id="${target.id}"]`);
+    if (!targetElement) {
+        console.warn('⚠️ 対象カード要素が見つかりません:', target.id);
+        return;
+    }
+    
+    const slashElement = document.createElement('div');
+    let className = `slash-effect ${isEffective ? 'effective' : ''}`;
+    
+    if (isEffective && attackerElement) {
+        className += ` ${attackerElement}`;
+    }
+    
+    slashElement.className = className;
+    
+    if (getComputedStyle(targetElement).position === 'static') {
+        targetElement.style.position = 'relative';
+    }
+    targetElement.appendChild(slashElement);
+    
+    setTimeout(() => {
+        if (slashElement && slashElement.parentNode) {
+            slashElement.parentNode.removeChild(slashElement);
+        }
+    }, 600);
+    */
+}
+
+// ダメージアニメーション表示
+function showDamageAnimation(target, damageInfo, attackerElement = null) {
+    // 対象カードの要素を取得
+    const targetElement = document.querySelector(`[data-card-id="${target.id}"]`);
+    if (!targetElement) {
+        console.warn('⚠️ 対象カード要素が見つかりません:', target.id);
+        return;
+    }
+    
+    // ダメージアニメーション要素を作成
+    const damageElement = document.createElement('div');
+    let className = `damage-animation ${damageInfo.isEffective ? 'effective' : ''}`;
+    
+    // 相剋効果がある場合、攻撃側の属性を追加
+    if (damageInfo.isEffective && attackerElement) {
+        className += ` ${attackerElement}`;
+    }
+    
+    damageElement.className = className;
+    damageElement.textContent = `-${damageInfo.damage}`;
+    
+    // カード要素に追加（相対配置）
+    targetElement.style.position = 'relative';
+    targetElement.appendChild(damageElement);
+    
+    console.log('💥 ダメージアニメーション表示:', {
+        対象: target.name,
+        ダメージ: damageInfo.damage,
+        効果的: damageInfo.isEffective,
+        攻撃属性: attackerElement
+    });
+    
+    // アニメーション終了後に要素を削除
+    setTimeout(() => {
+        if (damageElement.parentNode) {
+            damageElement.parentNode.removeChild(damageElement);
+        }
+    }, 1000);
+}
+
+// 確実にコスト1が入る手札生成（マリガン自動化）
+function generateStartingHand(deck) {
+    const cost1Cards = deck.filter(card => card.cost === 1);
+    const otherCards = deck.filter(card => card.cost !== 1);
+    
+    if (cost1Cards.length === 0) {
+        console.error('❌ デッキにコスト1カードがありません');
+        // フォールバック：通常のランダム手札
+        return deck.slice(0, 3);
+    }
+    
+    console.log('🎴 手札生成開始:', {
+        デッキサイズ: deck.length,
+        コスト1カード: cost1Cards.length + '枚',
+        その他カード: otherCards.length + '枚'
+    });
+    
+    // 必ず1枚はコスト1を保証
+    const guaranteedCost1 = cost1Cards[Math.floor(Math.random() * cost1Cards.length)];
+    const hand = [guaranteedCost1];
+    
+    // 残り2枚をランダム選択（デッキ全体から、保証したカードを除く）
+    const remainingDeck = deck.filter(card => card.id !== guaranteedCost1.id);
+    const shuffledRemaining = shuffleArray(remainingDeck);
+    
+    for (let i = 0; i < 2 && i < shuffledRemaining.length; i++) {
+        hand.push(shuffledRemaining[i]);
+    }
+    
+    console.log('✅ 手札生成完了:', hand.map(c => `${c.name}(コスト:${c.cost})`));
+    console.log('🎯 コスト1保証:', hand.some(c => c.cost === 1) ? '成功' : '失敗');
+    
+    return hand;
 }
 
 function initializeGame() {
@@ -917,24 +1190,32 @@ function initializeGame() {
     }
     
     // デッキ作成
-    gameState.playerDeck = shuffleArray(cardData.map(card => createCard(card, true)));
-    gameState.enemyDeck = shuffleArray(cardData.map(card => createCard(card, false)));
+    const playerDeckBase = shuffleArray(cardData.map(card => createCard(card, true)));
+    const enemyDeckBase = shuffleArray(cardData.map(card => createCard(card, false)));
     
-    // 初期手札
-    gameState.playerHand = [];
-    gameState.enemyHand = [];
+    // 初期手札（コスト1保証）
+    gameState.playerHand = generateStartingHand(playerDeckBase);
+    gameState.enemyHand = generateStartingHand(enemyDeckBase);
     
-    for (let i = 0; i < 3; i++) {
-        if (gameState.playerDeck.length > 0) {
-            gameState.playerHand.push(gameState.playerDeck.pop());
-        }
-        if (gameState.enemyDeck.length > 0) {
-            gameState.enemyHand.push(gameState.enemyDeck.pop());
-        }
-    }
+    // 手札に選ばれたカードをデッキから削除
+    gameState.playerDeck = playerDeckBase.filter(card => 
+        !gameState.playerHand.some(handCard => handCard.id === card.id)
+    );
+    gameState.enemyDeck = enemyDeckBase.filter(card => 
+        !gameState.enemyHand.some(handCard => handCard.id === card.id)
+    );
     
+    console.log('🎮 ゲーム初期化完了:', {
+        プレイヤー手札: gameState.playerHand.length + '枚',
+        プレイヤーデッキ: gameState.playerDeck.length + '枚',
+        敵手札: gameState.enemyHand.length + '枚',
+        敵デッキ: gameState.enemyDeck.length + '枚'
+    });
     
+    // ゲーム開始（マリガン不要）
     gameState.phase = 'summon';
+    gameState.gameOver = false; // ゲーム終了フラグをリセット
+    elements.endTurnBtn.disabled = false; // ボタンを有効化
     showMessage('ゲーム開始！手札からカードを選んでクリックしてください');
     updateDisplay();
     
@@ -952,7 +1233,7 @@ elements.startBtn.addEventListener('click', () => {
     // スタート画面を非表示にしてゲーム開始
     elements.startScreen.style.display = 'none';
     elements.gameContainer.style.display = 'block';
-    elements.audioControls.style.display = 'block';
+    elements.controlPanel.style.display = 'flex';
     
     // ゲーム初期化
     initializeGame();
@@ -1062,6 +1343,29 @@ elements.restartBtn.addEventListener('click', () => {
     
     // ゲーム再開
     initializeGame();
+});
+
+// ヘルプイベントリスナー
+document.getElementById('help-toggle').addEventListener('click', () => {
+    const helpModal = document.getElementById('help-modal');
+    // SE再生: ボタン
+    SoundManager.play('button');
+    helpModal.style.display = 'flex';
+});
+
+document.getElementById('help-close').addEventListener('click', () => {
+    const helpModal = document.getElementById('help-modal');
+    // SE再生: ボタン
+    SoundManager.play('button');
+    helpModal.style.display = 'none';
+});
+
+// ヘルプモーダルの背景クリックで閉じる
+document.getElementById('help-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'help-modal') {
+        const helpModal = document.getElementById('help-modal');
+        helpModal.style.display = 'none';
+    }
 });
 
 // ゲーム開始

@@ -114,9 +114,14 @@
         <div id="game-background" class="game-background"></div>
     </div>
 
-    <!-- 音響コントロール（右下固定） -->
-    <div class="audio-controls" id="audio-controls" style="display: none;">
-        <button id="audio-toggle" class="audio-toggle" title="音響設定">
+    <!-- マリガンシステムは自動化により削除済み -->
+
+    <!-- 統合コントロールパネル（右下固定） -->
+    <div class="control-panel" id="control-panel" style="display: none;">
+        <button id="help-toggle" class="control-btn" title="相剋表を表示">
+            ❓
+        </button>
+        <button id="audio-toggle" class="control-btn" title="音響設定">
             🔊
         </button>
         <div id="audio-panel" class="audio-panel" style="display: none;">
@@ -135,6 +140,52 @@
                 </div>
             </div>
             <button id="audio-close" class="close-btn">×</button>
+        </div>
+    </div>
+
+    <!-- ヘルプモーダル -->
+    <div id="help-modal" class="help-modal" style="display: none;">
+        <div class="help-content">
+            <h3>🌟 五行相剋相性表</h3>
+            <p class="help-description">攻撃属性が防御属性に効果的な場合、ダメージが1.5倍になります</p>
+            <div class="effectiveness-grid">
+                <div class="effect-row">
+                    <span class="attacker 木">木</span>
+                    <span class="arrow">→</span>
+                    <span class="defender 土">土</span>
+                    <span class="damage">1.5倍</span>
+                    <span class="description">木が土を突き破る</span>
+                </div>
+                <div class="effect-row">
+                    <span class="attacker 火">火</span>
+                    <span class="arrow">→</span>
+                    <span class="defender 金">金</span>
+                    <span class="damage">1.5倍</span>
+                    <span class="description">火が金属を溶かす</span>
+                </div>
+                <div class="effect-row">
+                    <span class="attacker 土">土</span>
+                    <span class="arrow">→</span>
+                    <span class="defender 水">水</span>
+                    <span class="damage">1.5倍</span>
+                    <span class="description">土が水を吸収</span>
+                </div>
+                <div class="effect-row">
+                    <span class="attacker 金">金</span>
+                    <span class="arrow">→</span>
+                    <span class="defender 木">木</span>
+                    <span class="damage">1.5倍</span>
+                    <span class="description">金属が木を切る</span>
+                </div>
+                <div class="effect-row">
+                    <span class="attacker 水">水</span>
+                    <span class="arrow">→</span>
+                    <span class="defender 火">火</span>
+                    <span class="damage">1.5倍</span>
+                    <span class="description">水が火を消す</span>
+                </div>
+            </div>
+            <button id="help-close" class="help-close-btn">閉じる</button>
         </div>
     </div>
 
