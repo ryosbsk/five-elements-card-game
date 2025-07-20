@@ -148,29 +148,29 @@ const elementalEffectiveness = {
 // カードデータ
 const cardData = [
     // コスト1カード
-    { name: "若芽", element: "木", hp: 25, attack: 25, speed: 10, cost: 1 },
-    { name: "火花", element: "火", hp: 15, attack: 35, speed: 10, cost: 1 },
-    { name: "小石", element: "土", hp: 40, attack: 10, speed: 10, cost: 1 },
-    { name: "鋼片", element: "金", hp: 15, attack: 25, speed: 20, cost: 1 },
-    { name: "水滴", element: "水", hp: 15, attack: 15, speed: 30, cost: 1 },
+    { name: "火花", element: "火", hp: 20, attack: 16, speed: 4, cost: 1 },
+    { name: "小石", element: "土", hp: 24, attack: 15, speed: 1, cost: 1 },
+    { name: "鋼片", element: "金", hp: 23, attack: 14, speed: 3, cost: 1 },
+    { name: "水滴", element: "水", hp: 24, attack: 11, speed: 5, cost: 1 },
+    { name: "若芽", element: "木", hp: 28, attack: 10, speed: 2, cost: 1 },
     
-    // コスト2カード
-    { name: "森の精", element: "木", hp: 35, attack: 35, speed: 20, cost: 2 },
-    { name: "炎の鳥", element: "火", hp: 25, attack: 50, speed: 15, cost: 2 },
-    { name: "岩の巨人", element: "土", hp: 60, attack: 15, speed: 15, cost: 2 },
-    { name: "鋼の狼", element: "金", hp: 25, attack: 35, speed: 30, cost: 2 },
-    { name: "水の精霊", element: "水", hp: 25, attack: 25, speed: 40, cost: 2 }
+    // コスト2カード  
+    { name: "炎の鳥", element: "火", hp: 22, attack: 18, speed: 6, cost: 2 },
+    { name: "岩の巨人", element: "土", hp: 26, attack: 17, speed: 3, cost: 2 },
+    { name: "鋼の狼", element: "金", hp: 25, attack: 16, speed: 5, cost: 2 },
+    { name: "水の精霊", element: "水", hp: 26, attack: 13, speed: 7, cost: 2 },
+    { name: "森の精", element: "木", hp: 30, attack: 12, speed: 4, cost: 2 }
 ];
 
 // ゲーム状態
 let gameState = {
     phase: 'draw',
     turn: 1,
-    playerPP: 2,
-    maxPP: 2,
-    enemyPP: 2,
+    playerPP: 1,
+    maxPP: 1,
+    enemyPP: 1,
     gameOver: false, // ゲーム終了フラグ
-    enemyMaxPP: 2,
+    enemyMaxPP: 1,
     playerHand: [],
     playerDeck: [],
     enemyHand: [],
@@ -558,9 +558,11 @@ function calculateElementalDamage(attacker, target) {
     
     // 相剋関係をチェック
     if (elementalEffectiveness[attacker.element] === target.element) {
+        const elementalBonus = attacker.cost === 1 ? 3 : 5;
         return {
-            damage: Math.floor(baseDamage * 1.5),
+            damage: baseDamage + elementalBonus,
             isEffective: true,
+            bonus: elementalBonus,
             message: `${attacker.element}が${target.element}に効果的！`
         };
     }
@@ -568,6 +570,7 @@ function calculateElementalDamage(attacker, target) {
     return {
         damage: baseDamage,
         isEffective: false,
+        bonus: 0,
         message: null
     };
 }
@@ -620,7 +623,9 @@ function processSimultaneousCombat(attacker, target) {
         if (counterDamage.isEffective) effectMessages.push(counterDamage.message);
         message += effectMessages.join(' / ') + ' ';
     }
-    message += `${attacker.name}⚔️${target.name} 同時${attackerDamage.damage}/${counterDamage.damage}ダメージ！`;
+    const attackerText = attackerDamage.isEffective ? `${attackerDamage.damage}(+${attackerDamage.bonus})` : attackerDamage.damage;
+    const counterText = counterDamage.isEffective ? `${counterDamage.damage}(+${counterDamage.bonus})` : counterDamage.damage;
+    message += `${attacker.name}⚔️${target.name} 同時${attackerText}/${counterText}ダメージ！`;
     showMessage(message);
     
     // 撃破判定（同時撃破の可能性）
@@ -714,7 +719,7 @@ function executeAttack(attacker, target) {
         
         // 相剋効果に応じたメッセージ表示
         if (damageInfo.isEffective) {
-            showMessage(`🔥 ${damageInfo.message} ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+            showMessage(`🔥 ${damageInfo.message} ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ(+${damageInfo.bonus})！`);
         } else {
             showMessage(`⚔️ ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ！`);
         }
@@ -878,7 +883,7 @@ function enemyAutoAttack(enemyCard) {
         
         // 相剋効果に応じたメッセージ表示
         if (damageInfo.isEffective) {
-            showMessage(`🔥 ${damageInfo.message} 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ！`);
+            showMessage(`🔥 ${damageInfo.message} 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ(+${damageInfo.bonus})！`);
         } else {
             showMessage(`⚔️ 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ！`);
         }
@@ -1111,65 +1116,24 @@ function enemyAISummon() {
     console.log('🃏 敵の手札:', gameState.enemyHand.map(c => `${c.name}(コスト:${c.cost})`));
     
     if (gameState.enemyHand.length > 0) {
-        const availableCards = gameState.enemyHand.filter(card => card.cost <= gameState.enemyPP);
+        // コストが高い順にソート
+        const sortedCards = gameState.enemyHand.sort((a, b) => b.cost - a.cost);
+        console.log('📈 召喚優先順位(コスト降順):', sortedCards.map(c => `${c.name}(${c.cost})`));
         const summonedCards = [];
         
-        // 2PP効率運用戦略
-        const cost2Cards = availableCards.filter(c => c.cost === 2);
-        const cost1Cards = availableCards.filter(c => c.cost === 1);
-        
-        console.log('🎯 AI戦略分析:', {
-            '利用可能PP': gameState.enemyPP,
-            'コスト2選択肢': cost2Cards.length + '枚',
-            'コスト1選択肢': cost1Cards.length + '枚'
-        });
-        
-        // 戦略1: 2コストカード優先（高効率）
-        if (cost2Cards.length > 0 && gameState.enemyPP >= 2 && hasEmptySlot(gameState.enemyField)) {
-            const bestCost2 = cost2Cards.sort((a, b) => (b.attack + b.hp) - (a.attack + a.hp))[0];
-            const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
-            
-            console.log('⭐ AI戦略: 2コスト単体重視 →', bestCost2.name);
-            gameState.enemyField[emptyIndex] = bestCost2;
-            gameState.enemyPP -= bestCost2.cost;
-            gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== bestCost2.id);
-            summonedCards.push(bestCost2.name);
-        }
-        // 戦略2: 1+1コスト戦略（物量作戦）
-        else if (cost1Cards.length >= 2 && gameState.enemyPP >= 2) {
-            const sortedCost1 = cost1Cards.sort((a, b) => (b.attack + b.hp) - (a.attack + a.hp));
-            
-            console.log('⚡ AI戦略: 1+1コスト物量作戦');
-            for (let i = 0; i < Math.min(2, sortedCost1.length); i++) {
-                if (gameState.enemyPP >= 1 && hasEmptySlot(gameState.enemyField)) {
-                    const card = sortedCost1[i];
-                    const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
-                    
-                    gameState.enemyField[emptyIndex] = card;
-                    gameState.enemyPP -= card.cost;
-                    gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
-                    summonedCards.push(card.name);
-                }
-            }
-        }
-        // 戦略3: 残りPPで可能な限り召喚（フォールバック）
-        else {
-            console.log('🔄 AI戦略: 残りPP最大活用');
-            const remainingCards = gameState.enemyHand.filter(card => card.cost <= gameState.enemyPP);
-            const sortedRemaining = remainingCards.sort((a, b) => b.cost - a.cost);
-            
-            for (const card of sortedRemaining) {
-                if (gameState.enemyPP >= card.cost && hasEmptySlot(gameState.enemyField)) {
-                    const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
-                    
-                    gameState.enemyField[emptyIndex] = card;
-                    gameState.enemyPP -= card.cost;
-                    gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
-                    summonedCards.push(card.name);
-                } else {
-                    const reason = gameState.enemyPP < card.cost ? 'PP不足' : 'フィールド満杯';
-                    console.log('❌ 召喚できません:', card.name, `(理由:${reason})`);
-                }
+        // PPが続く限り、コストの高いカードから順番に召喚
+        for (const card of sortedCards) {
+            if (gameState.enemyPP >= card.cost && hasEmptySlot(gameState.enemyField)) {
+                const emptyIndex = gameState.enemyField.findIndex(slot => slot === null);
+                console.log('🃏 敵カード召喚:', card.name, `(コスト:${card.cost}, スロット:${emptyIndex + 1}, 残りPP:${gameState.enemyPP}→${gameState.enemyPP - card.cost})`);
+                
+                gameState.enemyField[emptyIndex] = card;
+                gameState.enemyPP -= card.cost;
+                gameState.enemyHand = gameState.enemyHand.filter(c => c.id !== card.id);
+                summonedCards.push(card.name);
+            } else {
+                const reason = gameState.enemyPP < card.cost ? 'PP不足' : 'フィールド満杯';
+                console.log('❌ 召喚できません:', card.name, `(理由:${reason})`);
             }
         }
         
@@ -1219,6 +1183,15 @@ function checkVictoryCondition() {
     // 2. ガラ空きチェック（フィールドカードのみ、手札は除外）
     const playerCardsOnField = gameState.playerField.filter(c => c !== null);
     const enemyCardsOnField = gameState.enemyField.filter(c => c !== null);
+    
+    // 両方が空の場合は引き分け
+    if (playerCardsOnField.length === 0 && enemyCardsOnField.length === 0) {
+        return { 
+            result: "draw", 
+            message: "⚖️ 引き分け！両軍フィールドが同時に全滅しました",
+            sound: "button"
+        };
+    }
     
     if (playerCardsOnField.length === 0) {
         return { 
@@ -1357,7 +1330,7 @@ function generateStartingHand(deck) {
     if (cost1Cards.length === 0) {
         console.error('❌ デッキにコスト1カードがありません');
         // フォールバック：通常のランダム手札
-        return deck.slice(0, 4);
+        return deck.slice(0, 3);
     }
     
     console.log('🎴 手札生成開始:', {
@@ -1370,11 +1343,11 @@ function generateStartingHand(deck) {
     const guaranteedCost1 = cost1Cards[Math.floor(Math.random() * cost1Cards.length)];
     const hand = [guaranteedCost1];
     
-    // 残り3枚をランダム選択（デッキ全体から、保証したカードを除く）
+    // 残り2枚をランダム選択（デッキ全体から、保証したカードを除く）
     const remainingDeck = deck.filter(card => card.id !== guaranteedCost1.id);
     const shuffledRemaining = shuffleArray(remainingDeck);
     
-    for (let i = 0; i < 3 && i < shuffledRemaining.length; i++) {
+    for (let i = 0; i < 2 && i < shuffledRemaining.length; i++) {
         hand.push(shuffledRemaining[i]);
     }
     
