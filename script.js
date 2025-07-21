@@ -157,18 +157,18 @@ const elementIcons = {
 // カードデータ
 const cardData = [
     // コスト1カード
-    { name: "火花", element: "火", hp: 20, attack: 16, speed: 4, cost: 1 },
-    { name: "小石", element: "土", hp: 25, attack: 14, speed: 1, cost: 1 },
-    { name: "鋼片", element: "金", hp: 23, attack: 14, speed: 3, cost: 1 },
-    { name: "水滴", element: "水", hp: 24, attack: 11, speed: 5, cost: 1 },
-    { name: "若芽", element: "木", hp: 28, attack: 10, speed: 2, cost: 1 },
+    { name: "ヒノコ", element: "火", hp: 20, attack: 16, speed: 4, cost: 1, image: "assets/images/cards/fire_01.png" },
+    { name: "ドネズミ", element: "土", hp: 25, attack: 14, speed: 1, cost: 1, image: "assets/images/cards/earth_01.png" },
+    { name: "きんぴよ", element: "金", hp: 23, attack: 14, speed: 3, cost: 1, image: "assets/images/cards/metal_01.png" },
+    { name: "しずく", element: "水", hp: 24, attack: 11, speed: 5, cost: 1, image: "assets/images/cards/water_01.png" },
+    { name: "苔兜", element: "木", hp: 28, attack: 10, speed: 2, cost: 1, image: "assets/images/cards/wood_01.png" },
     
     // コスト2カード  
-    { name: "炎の鳥", element: "火", hp: 22, attack: 18, speed: 6, cost: 2 },
-    { name: "岩の巨人", element: "土", hp: 27, attack: 16, speed: 3, cost: 2 },
-    { name: "鋼の狼", element: "金", hp: 25, attack: 16, speed: 5, cost: 2 },
-    { name: "水の精霊", element: "水", hp: 26, attack: 13, speed: 7, cost: 2 },
-    { name: "森の精", element: "木", hp: 30, attack: 12, speed: 4, cost: 2 }
+    { name: "やけとり", element: "火", hp: 22, attack: 18, speed: 6, cost: 2, image: "assets/images/cards/fire_02.png" },
+    { name: "黒羊", element: "土", hp: 27, attack: 16, speed: 3, cost: 2, image: "assets/images/cards/earth_02.png" },
+    { name: "黄金豚", element: "金", hp: 25, attack: 16, speed: 5, cost: 2, image: "assets/images/cards/metal_02.png" },
+    { name: "あわあわ", element: "水", hp: 26, attack: 13, speed: 7, cost: 2, image: "assets/images/cards/water_02.png" },
+    { name: "マッチャ", element: "木", hp: 30, attack: 12, speed: 4, cost: 2, image: "assets/images/cards/wood_02.png" }
 ];
 
 // ゲーム状態
@@ -254,21 +254,24 @@ function createCardElement(card) {
     cardElement.dataset.cardId = card.id;
     
     cardElement.innerHTML = `
-        <div class="card-content-vertical">
-            <div class="card-name">
+        <div class="card-content-vertical" ${card.image ? `style="background-image: url('${card.image}')"` : ''}>
+            <!-- 上部：コスト＋カード名（中央配置） -->
+            <div class="card-header-overlay">
                 <span class="element-cost-overlay">
                     <span class="element-icon">${elementIcons[card.element]}</span>
                     <span class="cost-number">${card.cost}</span>
                 </span>
-                ${card.name}
+                <span class="card-name">${card.name.length > 4 ? card.name.substring(0, 4) : card.name}</span>
             </div>
-            <div class="card-stats-overlay">
+            
+            <!-- 下部：ステータス表示（中央配置） -->
+            <div class="card-stats-overlay-bottom">
                 <div class="stat-overlay">
                     <span class="stat-icon">❤️</span>
                     <span class="stat-number">${card.hp}</span>
                 </div>
                 <div class="stat-overlay">
-                    <span class="stat-icon">⚔️</span>
+                    <span class="stat-icon">🗡️</span>
                     <span class="stat-number">${card.attack}</span>
                 </div>
                 <div class="stat-overlay">
@@ -521,23 +524,6 @@ function updateEnemyFieldOnly() {
                 damageElement.innerHTML = canKill ? 
                     `-${damageInfo.damage} 💀` : 
                     `-${damageInfo.damage}`;
-                damageElement.style.cssText = `
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    background: rgba(220, 53, 69, 0.95);
-                    color: white;
-                    padding: 6px 12px;
-                    border-radius: 16px;
-                    font-size: 14px;
-                    font-weight: bold;
-                    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-                    border: 2px solid rgba(255, 255, 255, 0.3);
-                    z-index: 100;
-                    animation: damagePreviewPulse 1.5s ease-in-out infinite;
-                    pointer-events: none;
-                `;
                 
                 cardElement.appendChild(damageElement);
                 console.log(`✨ [${i}] 統合予測ダメージ表示:`, gameState.enemyField[i].name, `→ ${damageInfo.damage}ダメージ`);
@@ -683,183 +669,19 @@ function applyEnemyActionAnimation(cardElement, cardName) {
     console.log('🎯 敵行動アニメーション適用:', cardName);
 }
 
-// 予測ダメージ表示
-function showDamagePreview(attacker) {
-    console.log('🎯 showDamagePreview 開始:', attacker.name);
-    
-    gameState.enemyField.forEach((enemy, index) => {
-        if (enemy) {
-            const damageInfo = calculateElementalDamage(attacker, enemy);
-            const canKill = enemy.hp <= damageInfo.damage;
-            
-            // 敵カードのDOM要素を取得
-            const slot = document.getElementById(`enemy-slot-${index}`);
-            const enemyCardElement = slot ? slot.querySelector('.card') : null;
-            
-            console.log(`🔍 [${index}] ${enemy.name}:`, enemyCardElement ? 'カード要素あり' : 'カード要素なし');
-            
-            // DOM構造の詳細調査
-            if (enemyCardElement) {
-                console.log(`🏗️ [${index}] DOM構造:`, {
-                    'カード要素': enemyCardElement.tagName,
-                    'カードクラス': enemyCardElement.className,
-                    'カードID': enemyCardElement.id,
-                    '親要素': enemyCardElement.parentElement?.tagName,
-                    '親クラス': enemyCardElement.parentElement?.className,
-                    '子要素数': enemyCardElement.children.length,
-                    '子要素リスト': Array.from(enemyCardElement.children).map(child => child.className)
-                });
-            }
-            
-            if (enemyCardElement) {
-                // 既存の予測ダメージ表示を削除
-                const existingPreview = enemyCardElement.querySelector('.damage-preview');
-                if (existingPreview) {
-                    existingPreview.remove();
-                }
-                
-                // 予測ダメージ要素を作成
-                const previewElement = document.createElement('div');
-                previewElement.className = 'damage-preview';
-                previewElement.innerHTML = canKill ? 
-                    `-${damageInfo.damage} 💀` : 
-                    `-${damageInfo.damage}`;
-                
-                // デバッグ用: 一時的に目立つスタイルを追加
-                previewElement.style.cssText = `
-                    position: absolute !important;
-                    top: 10px !important;
-                    left: 10px !important;
-                    background: red !important;
-                    color: white !important;
-                    padding: 10px !important;
-                    z-index: 9999 !important;
-                    font-size: 16px !important;
-                    border: 3px solid yellow !important;
-                    transform: none !important;
-                `;
-                
-                // カードに追加（card-content-vertical内にも試す）
-                const cardContent = enemyCardElement.querySelector('.card-content-vertical');
-                if (cardContent) {
-                    console.log(`📦 [${index}] card-content-vertical内に追加テスト`);
-                    
-                    // card-content-verticalのCSS制限を調査
-                    const cardContentStyle = getComputedStyle(cardContent);
-                    console.log(`🎨 [${index}] card-content-verticalのCSS:`, {
-                        overflow: cardContentStyle.overflow,
-                        position: cardContentStyle.position,
-                        zIndex: cardContentStyle.zIndex,
-                        display: cardContentStyle.display,
-                        visibility: cardContentStyle.visibility
-                    });
-                    
-                    cardContent.appendChild(previewElement);
-                    
-                    // ゲームコンテナに予測ダメージを絶対位置で表示（解決案）
-                    const gameContainer = document.getElementById('game-container');
-                    const cardRect = enemyCardElement.getBoundingClientRect();
-                    const gameRect = gameContainer.getBoundingClientRect();
-                    
-                    const damageDisplayElement = document.createElement('div');
-                    damageDisplayElement.className = 'damage-preview-overlay';
-                    damageDisplayElement.innerHTML = canKill ? 
-                        `-${damageInfo.damage} 💀` : 
-                        `-${damageInfo.damage}`;
-                    damageDisplayElement.style.cssText = `
-                        position: absolute !important;
-                        top: ${cardRect.top - gameRect.top + cardRect.height * 0.65}px !important;
-                        left: ${cardRect.left - gameRect.left + cardRect.width * 0.5 - 24}px !important;
-                        background: rgba(220, 53, 69, 0.95) !important;
-                        color: white !important;
-                        padding: 6px 12px !important;
-                        border-radius: 16px !important;
-                        font-size: 14px !important;
-                        font-weight: bold !important;
-                        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8) !important;
-                        border: 2px solid rgba(255, 255, 255, 0.3) !important;
-                        z-index: 1000 !important;
-                        animation: damagePreviewPulse 1.5s ease-in-out infinite !important;
-                        pointer-events: none !important;
-                    `;
-                    
-                    if (gameContainer) {
-                        gameContainer.appendChild(damageDisplayElement);
-                        console.log(`✨ [${index}] 予測ダメージをゲームコンテナに表示`);
-                    }
-                } else {
-                    console.log(`📦 [${index}] card要素に直接追加`);
-                    enemyCardElement.appendChild(previewElement);
-                }
-                
-                // 最終テスト: bodyに直接追加
-                const bodyTestElement = document.createElement('div');
-                bodyTestElement.innerHTML = `テスト: ${enemy.name}`;
-                bodyTestElement.style.cssText = `
-                    position: fixed !important;
-                    top: 50px !important;
-                    left: 50px !important;
-                    background: blue !important;
-                    color: white !important;
-                    padding: 20px !important;
-                    z-index: 99999 !important;
-                    font-size: 20px !important;
-                    border: 5px solid orange !important;
-                `;
-                document.body.appendChild(bodyTestElement);
-                console.log('🧪 bodyテスト要素追加:', bodyTestElement);
-                
-                console.log('💭 予測ダメージ表示:', enemy.name, `→ ${damageInfo.damage}ダメージ`, canKill ? '(撃破可能💀)' : '');
-                
-                // 追加後の確認
-                const addedElement = enemyCardElement.querySelector('.damage-preview');
-                console.log(`✅ [${index}] 追加確認:`, addedElement ? '存在する' : '存在しない');
-                
-                // 3秒後に再確認
-                setTimeout(() => {
-                    const stillExists = enemyCardElement.querySelector('.damage-preview');
-                    console.log(`⏰ [${index}] 3秒後確認:`, stillExists ? '存在する' : '削除された');
-                    if (!stillExists) {
-                        console.log('🚨 要素が削除されました！');
-                    }
-                }, 3000);
-                if (addedElement) {
-                    const rect = addedElement.getBoundingClientRect();
-                    const parentRect = enemyCardElement.getBoundingClientRect();
-                    console.log(`🔍 [${index}] CSS確認:`, {
-                        display: getComputedStyle(addedElement).display,
-                        visibility: getComputedStyle(addedElement).visibility,
-                        opacity: getComputedStyle(addedElement).opacity,
-                        zIndex: getComputedStyle(addedElement).zIndex,
-                        position: getComputedStyle(addedElement).position,
-                        width: addedElement.offsetWidth + 'px',
-                        height: addedElement.offsetHeight + 'px'
-                    });
-                    console.log(`📍 [${index}] 位置情報:`, {
-                        '要素位置': `x:${rect.left.toFixed(1)}, y:${rect.top.toFixed(1)}`,
-                        '親カード位置': `x:${parentRect.left.toFixed(1)}, y:${parentRect.top.toFixed(1)}`,
-                        '親カードサイズ': `${parentRect.width.toFixed(1)}×${parentRect.height.toFixed(1)}`,
-                        '画面内判定': rect.left >= 0 && rect.top >= 0 && rect.right <= window.innerWidth && rect.bottom <= window.innerHeight ? '画面内' : '画面外'
-                    });
-                }
-            }
-        }
-    });
-    
-    console.log('🎯 showDamagePreview 完了');
-}
+// 旧予測ダメージ表示機能削除済み - 統合機能により代替
 
-// 予測ダメージ表示を削除
+// 統合機能の予測ダメージ表示を削除
 function hideDamagePreview() {
-    // 元のカード内要素を削除
-    document.querySelectorAll('.damage-preview').forEach(element => {
+    // 統合機能のカード内要素を削除
+    document.querySelectorAll('.damage-preview-integrated').forEach(element => {
         element.remove();
     });
     // ゲームコンテナ内のオーバーレイ要素も削除
     document.querySelectorAll('.damage-preview-overlay').forEach(element => {
         element.remove();
     });
-    console.log('🧹 予測ダメージ全削除（オーバーレイ含む）');
+    console.log('🧹 統合機能予測ダメージ全削除');
 }
 
 function handleAttackCancelClick(event) {
@@ -1315,6 +1137,7 @@ function updateTurnOrderDisplay() {
             const cardElement = document.createElement('div');
             cardElement.className = `turn-order-mini ${card.isPlayer ? 'player-mini' : 'enemy-mini'}`;
             
+            
             // 行動済みカードはグレーアウトクラスを追加
             if (card.hasActed) {
                 cardElement.classList.add('acted');
@@ -1324,7 +1147,7 @@ function updateTurnOrderDisplay() {
             const elementIcon = elementIcons[card.element];
             
             cardElement.innerHTML = `
-                ${elementIcon}${card.name}
+                ${elementIcon}${card.name.length > 4 ? card.name.substring(0, 4) : card.name}
                 <span class="element-cost-overlay">
                     <span class="element-icon">⚡</span>
                     <span class="cost-number">${card.speed}</span>

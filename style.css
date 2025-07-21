@@ -31,10 +31,10 @@ body {
 .start-content {
     text-align: center;
     background: rgba(255, 255, 255, 0.95);
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
+    padding: 24px;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    max-width: 360px;
     width: 90%;
 }
 
@@ -86,16 +86,16 @@ body {
 .game-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 12px;
+    padding: 8px;
     position: relative;
     display: grid !important;
     grid-template-areas: 
         "turn-order enemy-area enemy-area"
         "turn-order player-area player-area"
         "player-control-zone player-control-zone player-control-zone";
-    grid-template-columns: 250px 1fr 2fr;
+    grid-template-columns: 220px 1fr 2fr;
     grid-template-rows: auto auto 1fr;
-    gap: 12px;
+    gap: 8px;
     min-height: 100vh;
 }
 
@@ -219,23 +219,24 @@ body {
 }
 
 .hand-cards {
-    min-height: 140px;
+    min-height: 120px;
 }
 
 .controls {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 8px;
 }
 
 .message-section {
+    /* メッセージセクションのスタイル */
 }
 
 .section-header {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
-    margin-bottom: 12px;
+    margin-bottom: 6px;
     color: #333;
 }
 
@@ -301,7 +302,7 @@ body {
 
 /* コンパクト行動順デザイン */
 .turn-order-mini {
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.7);
     border-radius: 6px;
     padding: 4px 6px;
     margin: 2px 0 2px 8px; /* 左マージン8px追加で余白確保 */
@@ -314,6 +315,8 @@ body {
     display: flex;
     align-items: center;
     gap: 4px;
+    position: relative;
+    overflow: hidden;
 }
 
 /* 行動順カード内のオーバーレイ表示 */
@@ -343,14 +346,14 @@ body {
 }
 
 .turn-order-mini.player-mini {
-    background: white;
+    background: rgba(255, 255, 255, 0.7);
     border-left-color: #4caf50;
     color: #333;
     font-weight: bold;
 }
 
 .turn-order-mini.enemy-mini {
-    background: white;
+    background: rgba(255, 255, 255, 0.7);
     border-left-color: #d32f2f;
     color: #333;
     font-weight: bold;
@@ -413,10 +416,10 @@ body {
 }
 
 .card-slot {
-    width: 120px;
-    height: 160px;
+    width: 100px;
+    height: 140px;
     border: 2px dashed #ccc;
-    border-radius: 10px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -437,15 +440,15 @@ body {
 
 /* カードスタイル */
 .card {
-    width: 110px;
-    height: 150px;
-    border-radius: 10px;
+    width: 90px;
+    height: 130px;
+    border-radius: 8px;
     border: 2px solid;
-    padding: 8px;
+    padding: 0;
     background: white;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
     position: relative;
 }
 
@@ -531,14 +534,47 @@ body {
     background: linear-gradient(to bottom, #E3F2FD, #BBDEFB); 
 }
 
-/* シャドウバース風カードレイアウト */
+/* シャドウバース風カードレイアウト - 全面背景画像デザイン */
 .card-content-vertical {
+    position: relative;
+    height: 100%;
+    background-size: 180%;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    border-radius: 6px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: space-between;
-    height: 100%;
-    padding: 6px 4px;
+    align-items: center;
+}
+
+/* カード上部：コスト＋名前エリア（左端配置・透過背景） */
+.card-header-overlay {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0px;
+    padding: 1px 3px;
+    z-index: 10;
+    justify-content: flex-start;
+    align-self: flex-start;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    position: relative;
+}
+
+/* カード下部：ステータスエリア（中央配置・透過背景） */
+.card-stats-overlay-bottom {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 2px 6px;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    align-self: center;
 }
 
 .card-title {
@@ -549,29 +585,36 @@ body {
 
 .card-name {
     font-weight: bold;
-    font-size: 12px;
+    font-size: 9px;
     text-align: center;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     line-height: 1.1;
+    padding: 2px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 15;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6), 
+                 0 0 4px rgba(0, 0, 0, 0.3);
 }
 
-/* オーバーレイ数値表示システム */
-.card-stats-overlay {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: auto;
-}
+/* オーバーレイ数値表示システム（削除済み - 新レイアウトでは .card-stats-overlay-bottom を使用） */
 
 .stat-overlay {
     position: relative;
     display: inline-block;
-    width: 22px;
-    height: 22px;
+    width: 20px;
+    height: 20px;
+    margin: 0 1px;
+    vertical-align: middle;
 }
 
 .stat-overlay .stat-icon {
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1;
     width: 100%;
     height: 100%;
@@ -587,11 +630,9 @@ body {
     transform: translate(-50%, -50%);
     color: white;
     font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 
-                 -1px -1px 2px rgba(0, 0, 0, 0.8),
-                 1px -1px 2px rgba(0, 0, 0, 0.8),
-                 -1px 1px 2px rgba(0, 0, 0, 0.8);
-    font-size: 10px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6), 
+                 0 0 4px rgba(0, 0, 0, 0.3);
+    font-size: 9px;
     line-height: 1;
     pointer-events: none;
 }
@@ -607,7 +648,7 @@ body {
 }
 
 .element-cost-overlay .element-icon {
-    font-size: 20px;
+    font-size: 16px;
     line-height: 1;
     width: 100%;
     height: 100%;
@@ -623,38 +664,37 @@ body {
     transform: translate(-50%, -50%);
     color: white;
     font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8), 
-                 -1px -1px 2px rgba(0, 0, 0, 0.8),
-                 1px -1px 2px rgba(0, 0, 0, 0.8),
-                 -1px 1px 2px rgba(0, 0, 0, 0.8);
-    font-size: 11px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6), 
+                 0 0 4px rgba(0, 0, 0, 0.3);
+    font-size: 9px;
     line-height: 1;
     pointer-events: none;
 }
 
-/* 予測ダメージ表示 */
-.damage-preview {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(220, 53, 69, 0.95);
-    color: white;
-    padding: 6px 12px;
-    border-radius: 16px;
-    font-size: 14px;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    z-index: 100;
-    animation: damagePreviewPulse 1.5s ease-in-out infinite;
-    pointer-events: none;
-    display: block !important;
+/* 統合機能用予測ダメージ表示 */
+.damage-preview-integrated,
+.damage-preview-overlay {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    color: #ff2222 !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8),
+                 0 0 6px rgba(255, 255, 255, 0.6) !important;
+    z-index: 100 !important;
+    pointer-events: none !important;
+    animation: damagePreviewSimple 1.2s ease-in-out infinite !important;
+    white-space: nowrap !important;
+    min-width: 60px !important;
+    text-align: center !important;
 }
 
-@keyframes damagePreviewPulse {
-    0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
-    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+/* 統合機能用予測ダメージアニメーション */
+@keyframes damagePreviewSimple {
+    0%, 100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
 }
 
 /* 旧レイアウト（互換性のため残す） */
@@ -769,9 +809,9 @@ body {
 }
 
 .hand-cards .card {
-    width: 110px;
-    height: 140px;
-    padding: 8px;
+    width: 90px;
+    height: 130px;
+    padding: 0px;
 }
 
 .hand-cards .card:hover {
@@ -1616,6 +1656,7 @@ body {
     .hand-cards .card {
         width: 65px;
         height: 85px;
+        padding: 0;
     }
     
     .card-name {
@@ -1780,7 +1821,7 @@ body {
     .hand-cards .card {
         width: 55px;
         height: 75px;
-        padding: 3px;
+        padding: 0;
     }
     
     .card-name {
