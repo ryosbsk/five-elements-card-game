@@ -27,11 +27,8 @@
     <div class="game-container" id="game-container" style="display: none;">
         <!-- 敵エリア -->
         <div class="enemy-area">
-            <div class="enemy-info-overlay">
-                <span class="area-label">敵</span>
-                <span id="enemy-pp">💎 PP: 1/1</span>
-                <span id="enemy-victory-counter">🏆 撃破: 0/5</span>
-                <span id="enemy-hand-count">💳 手札: 3枚</span>
+            <div class="enemy-info-compact">
+                敵 | <span id="enemy-pp">💎1/1</span> | <span id="enemy-victory-counter">🏆0/5</span> | <span id="enemy-hand-count">💳3枚</span>
             </div>
             <div class="battlefield" id="enemy-battlefield">
                 <div class="card-slot" id="enemy-slot-0">
@@ -59,6 +56,9 @@
                     <div class="empty-slot">空</div>
                 </div>
             </div>
+            <div class="player-info-compact">
+                自分 | <span id="player-pp-compact">💎1/1</span> | <span id="player-victory-compact">🏆0/5</span> | <span id="player-turn-compact">🔄ターン1</span>
+            </div>
         </div>
 
         <!-- 行動順表示 -->
@@ -73,14 +73,6 @@
 
         <!-- プレイヤー統合コントロールゾーン -->
         <div class="player-control-zone">
-            <!-- プレイヤー情報ヘッダー -->
-            <div class="player-info-header">
-                <div class="info-badge phase-display" id="current-phase">ゲーム開始</div>
-                <div class="info-badge turn-display" id="turn-counter">ターン: 1</div>
-                <div class="info-badge pp-display" id="pp-counter">💎 PP: 1/1</div>
-                <div class="info-badge victory-display" id="victory-counter">🏆 撃破: 0/5</div>
-            </div>
-
             <!-- 手札エリア -->
             <div class="hand-section">
                 <div class="section-header">手札</div>
@@ -151,8 +143,8 @@
             <!-- タブナビゲーション -->
             <div class="help-tabs">
                 <button class="help-tab-btn active" data-tab="basic-rules">📋 基本ルール</button>
+                <button class="help-tab-btn" data-tab="gameflow">🎮 ゲームフロー</button>
                 <button class="help-tab-btn" data-tab="effectiveness">⚔️ 相剋表</button>
-                <button class="help-tab-btn" data-tab="strategy">💡 戦略ヒント</button>
                 <button class="help-tab-btn" data-tab="faq">❓ FAQ</button>
             </div>
             
@@ -167,18 +159,29 @@
                         <p><strong>引き分け:</strong> 両軍フィールドが同時に全滅</p>
                     </div>
                     
-                    <h4>⚔️ バトルシステム</h4>
+                    <h4>🎮 ゲームシステム</h4>
                     <div class="rule-section">
                         <p><strong>3vs3バトル:</strong> 最大3枚のカードでフィールドを構築</p>
-                        <p><strong>ターン制:</strong> カードのスピード値が高い順に行動</p>
+                        <p><strong>フェーズ制:</strong> 配置フェーズと戦闘フェーズに分かれています</p>
+                        <p><strong>手動攻撃:</strong> 攻撃は自動実行ではなく、プレイヤーが対象を選択</p>
+                        <p><strong>スピード順:</strong> カードのスピード値が高い順に行動</p>
                         <p><strong>同スピード:</strong> 同時に攻撃し、相打ちになる</p>
                     </div>
                     
                     <h4>💎 PPシステム</h4>
                     <div class="rule-section">
-                        <p><strong>初期PP:</strong> 1PP、手札3枚でスタート</p>
+                        <p><strong>初期状態:</strong> 1PP、手札3枚でスタート</p>
                         <p><strong>PP増加:</strong> 毎ターン+1PP（最大5PP）</p>
                         <p><strong>カード配置:</strong> 手札からカードをPPコストで配置</p>
+                        <p><strong>コスト:</strong> カード1枚につき1または2のPPを消費</p>
+                    </div>
+                    
+                    <h4>📊 ステータス表示</h4>
+                    <div class="rule-section">
+                        <p><strong>🔥2 属性コスト:</strong> 属性アイコン上の数字がカード召喚に必要なPP</p>
+                        <p><strong>❤️15 HP:</strong> アイコン上の数字がカードの体力（0になると撃破）</p>
+                        <p><strong>⚔️12 攻撃力:</strong> アイコン上の数字が与えるダメージ値</p>
+                        <p><strong>⚡8 スピード:</strong> アイコン上の数字が行動順の優先度（高い順に行動）</p>
                     </div>
                 </div>
                 
@@ -188,68 +191,89 @@
                     <p class="help-description">攻撃属性が防御属性に効果的な場合、<strong>コスト1は+3ダメージ、コスト2は+5ダメージ</strong>になります</p>
                     
                     <div class="effectiveness-grid">
-                        <div class="effect-row">
-                            <span class="attacker 木">木</span>
-                            <span class="arrow">→</span>
-                            <span class="defender 土">土</span>
-                            <span class="damage">+3/+5</span>
-                            <span class="description">根が大地を割る</span>
+                        <div class="effect-item">
+                            <div class="effect-row">
+                                <span class="attacker 木">木</span>
+                                <span class="arrow">→</span>
+                                <span class="defender 土">土</span>
+                                <span class="damage">+3/+5</span>
+                            </div>
+                            <div class="effect-description">根が大地を割る</div>
                         </div>
-                        <div class="effect-row">
-                            <span class="attacker 火">火</span>
-                            <span class="arrow">→</span>
-                            <span class="defender 金">金</span>
-                            <span class="damage">+3/+5</span>
-                            <span class="description">炎が金属を溶かす</span>
+                        <div class="effect-item">
+                            <div class="effect-row">
+                                <span class="attacker 火">火</span>
+                                <span class="arrow">→</span>
+                                <span class="defender 金">金</span>
+                                <span class="damage">+3/+5</span>
+                            </div>
+                            <div class="effect-description">炎が金属を溶かす</div>
                         </div>
-                        <div class="effect-row">
-                            <span class="attacker 土">土</span>
-                            <span class="arrow">→</span>
-                            <span class="defender 水">水</span>
-                            <span class="damage">+3/+5</span>
-                            <span class="description">大地が水を吸い込む</span>
+                        <div class="effect-item">
+                            <div class="effect-row">
+                                <span class="attacker 土">土</span>
+                                <span class="arrow">→</span>
+                                <span class="defender 水">水</span>
+                                <span class="damage">+3/+5</span>
+                            </div>
+                            <div class="effect-description">大地が水を吸い込む</div>
                         </div>
-                        <div class="effect-row">
-                            <span class="attacker 金">金</span>
-                            <span class="arrow">→</span>
-                            <span class="defender 木">木</span>
-                            <span class="damage">+3/+5</span>
-                            <span class="description">刃が木を断つ</span>
+                        <div class="effect-item">
+                            <div class="effect-row">
+                                <span class="attacker 金">金</span>
+                                <span class="arrow">→</span>
+                                <span class="defender 木">木</span>
+                                <span class="damage">+3/+5</span>
+                            </div>
+                            <div class="effect-description">刃が木を断つ</div>
                         </div>
-                        <div class="effect-row">
-                            <span class="attacker 水">水</span>
-                            <span class="arrow">→</span>
-                            <span class="defender 火">火</span>
-                            <span class="damage">+3/+5</span>
-                            <span class="description">水が火を鎮める</span>
+                        <div class="effect-item">
+                            <div class="effect-row">
+                                <span class="attacker 水">水</span>
+                                <span class="arrow">→</span>
+                                <span class="defender 火">火</span>
+                                <span class="damage">+3/+5</span>
+                            </div>
+                            <div class="effect-description">水が火を鎮める</div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 💡 戦略ヒント タブ -->
-                <div id="strategy-tab" class="tab-panel">
-                    <h4>🧠 基本戦術</h4>
-                    <div class="strategy-section">
-                        <h5>💎 PP管理</h5>
-                        <ul>
-                            <li>序盤はコスト1カードで手札を温存</li>
-                            <li>PP2-3でコスト2カードの投入を検討</li>
-                            <li>一度に全カードを使わず、継続戦を意識</li>
-                        </ul>
+                <!-- 🎮 ゲームフロー タブ -->
+                <div id="gameflow-tab" class="tab-panel">
+                    <h4>🔄 ゲームの流れ</h4>
+                    
+                    <div class="gameflow-section">
+                        <h5>📦 配置フェーズ</h5>
+                        <div class="phase-content">
+                            <p>手札からカードを選んでフィールドに配置します</p>
+                            <ul>
+                                <li>PPを消費してカードを場に出す</li>
+                                <li>最大3枚まで配置可能</li>
+                                <li>配置完了後「戦闘フェーズ」ボタンをクリック</li>
+                            </ul>
+                        </div>
                         
-                        <h5>⚔️ 相剋活用</h5>
-                        <ul>
-                            <li>敵の属性を見て有利なカードを配置</li>
-                            <li>コスト2なら+5の大ダメージを狙える</li>
-                            <li>劣勢時は相剋で逆転を狙う</li>
-                        </ul>
+                        <h5>⚔️ 戦闘フェーズ</h5>
+                        <div class="phase-content">
+                            <p>スピードの高い順にカードが行動します</p>
+                            <ul>
+                                <li>行動するカードの攻撃対象をプレイヤーが選択</li>
+                                <li>攻撃は自動実行ではなく、手動で対象を指定</li>
+                                <li>全カードの行動完了で次ターンへ</li>
+                                <li>敵カード5コスト分撃破で勝利</li>
+                            </ul>
+                        </div>
                         
-                        <h5>⚡ スピード戦術</h5>
-                        <ul>
-                            <li>高スピードカードで先制攻撃</li>
-                            <li>同スピードなら相打ち覚悟で攻撃</li>
-                            <li>低スピードでも高耐久なら有効</li>
-                        </ul>
+                        <h5>🔁 ターン進行</h5>
+                        <div class="phase-content">
+                            <p>各ターンでPPが+1増加し、新しいカードを引きます</p>
+                            <ul>
+                                <li>毎ターンPP+1（最大5PP）</li>
+                                <li>手札からカードを1枚補充</li>
+                                <li>配置→戦闘のサイクルを繰り返し</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 
@@ -265,14 +289,14 @@
                         
                         <div class="faq-item">
                             <h5>⚔️ 戦闘について</h5>
-                            <p><strong>Q:</strong> 攻撃はいつ始まるの？</p>
-                            <p><strong>A:</strong> 「ターン終了」ボタンを押すと、スピード順に自動で戦闘が進行します。</p>
+                            <p><strong>Q:</strong> 攻撃はどうやって行うの？</p>
+                            <p><strong>A:</strong> 「戦闘フェーズ」ボタンを押すと戦闘開始。スピード順に行動カードが表示され、プレイヤーが攻撃対象を選択します。</p>
                         </div>
                         
                         <div class="faq-item">
-                            <h5>💎 PPについて</h5>
-                            <p><strong>Q:</strong> PPが足りない時は？</p>
-                            <p><strong>A:</strong> 「行動スキップ」でターンを進めてPPを増やすか、低コストカードを使いましょう。</p>
+                            <h5>🔄 フェーズについて</h5>
+                            <p><strong>Q:</strong> 配置フェーズと戦闘フェーズの違いは？</p>
+                            <p><strong>A:</strong> 配置フェーズでカードを場に出し、戦闘フェーズで実際の攻撃を行います。詳しくは「ゲームフロー」タブをご確認ください。</p>
                         </div>
                         
                         <div class="faq-item">
@@ -286,6 +310,28 @@
             </div>
             
             <button id="help-close" class="help-close-btn">閉じる</button>
+        </div>
+    </div>
+
+    <!-- フェーズポップアップモーダル -->
+    <div id="phase-popup-modal" class="phase-popup-modal" style="display: none;">
+        <div class="phase-popup-content">
+            <div id="phase-popup-icon" class="phase-popup-icon">⚔️</div>
+            <div id="phase-popup-text" class="phase-popup-text">戦闘フェーズ</div>
+        </div>
+    </div>
+
+    <!-- ゲーム結果モーダル -->
+    <div id="game-result-modal" class="result-modal" style="display: none;">
+        <div class="result-overlay"></div>
+        <div class="result-content">
+            <div id="result-icon" class="result-icon">🏆</div>
+            <h2 id="result-title" class="result-title">勝利！</h2>
+            <p id="result-message" class="result-message">敵カード5コストを撃破しました</p>
+            <div class="result-buttons">
+                <button id="result-restart-btn" class="result-restart-btn">ゲーム再開</button>
+                <button id="result-close-btn" class="result-close-btn">閉じる</button>
+            </div>
         </div>
     </div>
 
