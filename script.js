@@ -1117,11 +1117,11 @@ function updateTurnOrderDisplay() {
             const elementIcon = elementIcons[card.element];
             
             cardElement.innerHTML = `
+                ${elementIcon}${card.name}
                 <span class="element-cost-overlay">
-                    <span class="element-icon">${elementIcon}</span>
+                    <span class="element-icon">⚡</span>
                     <span class="cost-number">${card.speed}</span>
                 </span>
-                ${card.name}
             `;
             
             // 現在行動中のカードをハイライト（未行動の最初のカード）
