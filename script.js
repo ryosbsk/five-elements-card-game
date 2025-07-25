@@ -466,9 +466,23 @@ function updateFieldDisplay() {
             
             // 相打ちシステム削除済み
             
-            // 攻撃対象として選択可能
-            if (gameState.attackMode) {
+            // 攻撃対象として選択可能 + 予測ダメージ表示
+            if (gameState.attackMode && gameState.currentAttacker) {
                 cardElement.classList.add('selectable-target');
+                
+                // 予測ダメージを表示
+                const damageInfo = calculateElementalDamage(gameState.currentAttacker, gameState.enemyField[i]);
+                const canKill = gameState.enemyField[i].hp <= damageInfo.damage;
+                
+                const damageElement = document.createElement('div');
+                damageElement.className = 'damage-preview-integrated';
+                damageElement.innerHTML = canKill ? 
+                    `-${damageInfo.damage} 💀` : 
+                    `-${damageInfo.damage}`;
+                
+                cardElement.appendChild(damageElement);
+                console.log(`✨ [${i}] 予測ダメージ表示（一般更新）:`, gameState.enemyField[i].name, `→ ${damageInfo.damage}ダメージ`);
+                
                 cardElement.addEventListener('click', (event) => {
                     if (gameState.gameOver) {
                         console.log('🚫 ゲーム終了済み - 攻撃実行無効');
@@ -899,10 +913,17 @@ function executeAttack(attacker, target) {
                 if (checkBattleEnd()) {
                     nextPhase();
                 } else {
-                    // 次の行動者がAIの場合、自動で行動
+                    // 次の行動者を自動で開始（プレイヤー・敵問わず）
                     const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-                    if (nextCard && !nextCard.isPlayer) {
-                        enemyAutoAttack(nextCard);
+                    if (nextCard) {
+                        if (nextCard.isPlayer) {
+                            // プレイヤーカード即座に自動攻撃開始
+                            console.log('🎯 次のプレイヤーカード自動攻撃:', nextCard.name);
+                            showMessage(`💫 ${nextCard.name}の攻撃開始`);
+                            startAttack(nextCard);
+                        } else {
+                            enemyAutoAttack(nextCard);
+                        }
                     }
                 }
             }, 500);
@@ -932,8 +953,15 @@ function enemyAutoAttack(enemyCard) {
                 nextPhase();
             } else {
                 const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-                if (nextCard && !nextCard.isPlayer) {
-                    enemyAutoAttack(nextCard);
+                if (nextCard) {
+                    if (nextCard.isPlayer) {
+                        // プレイヤーカード即座に自動攻撃開始
+                        console.log('🎯 次のプレイヤーカード自動攻撃:', nextCard.name);
+                        showMessage(`💫 ${nextCard.name}の攻撃開始`);
+                        startAttack(nextCard);
+                    } else {
+                        enemyAutoAttack(nextCard);
+                    }
                 }
             }
         }, 1500);
@@ -1094,8 +1122,15 @@ function defeatCard(card) {
         } else {
             // 次の行動者に移行
             const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-            if (nextCard && !nextCard.isPlayer) {
-                enemyAutoAttack(nextCard);
+            if (nextCard) {
+                if (nextCard.isPlayer) {
+                    // プレイヤーカード即座に自動攻撃開始
+                    console.log('🎯 次のプレイヤーカード自動攻撃:', nextCard.name);
+                    showMessage(`💫 ${nextCard.name}の攻撃開始`);
+                    startAttack(nextCard);
+                } else {
+                    enemyAutoAttack(nextCard);
+                }
             }
         }
     }, 200); // 少し遅延して勝敗判定
@@ -1207,12 +1242,12 @@ function showPhasePopup(phaseName) {
         content.classList.add('show');
     }, 50);
 
-    // 0.8秒後に自動で閉じる
+    // 0.4秒後に自動で閉じる（ミニマル版）
     setTimeout(() => {
         content.classList.remove('show');
         setTimeout(() => {
             modal.style.display = 'none';
-        }, 400);
+        }, 250);
     }, 800);
 
     console.log('📋 フェーズポップアップ表示:', data.text);
@@ -1287,15 +1322,20 @@ function prepareBattle() {
         card.hasActed = false;
     });
     
-    showMessage('戦闘フェーズ：カードをクリックして攻撃してください');
+    showMessage('戦闘フェーズ：自動攻撃システム有効');
     updateTurnOrderDisplay();
     
-    // 最初の行動者が敵の場合、自動で攻撃開始
+    // 最初の行動者を自動で開始（プレイヤー・敵問わず）- 遅延なし
     const firstCard = gameState.turnOrder.find(card => !card.hasActed);
-    if (firstCard && !firstCard.isPlayer) {
-        setTimeout(() => {
+    if (firstCard) {
+        if (firstCard.isPlayer) {
+            // プレイヤーカード即座に自動攻撃開始
+            console.log('🎯 プレイヤーカード自動攻撃開始:', firstCard.name);
+            showMessage(`💫 ${firstCard.name}の攻撃開始`);
+            startAttack(firstCard);
+        } else {
             enemyAutoAttack(firstCard);
-        }, 1000);
+        }
     }
 }
 
@@ -1496,59 +1536,60 @@ function gameOver(result, message, sound) {
     }, 500);
 }
 
-// 🎭 ゲーム結果モーダル表示
+// 🌸 ミニマル ゲーム結果モーダル表示
 function showGameResultModal(result, message) {
     console.log('🔍 showGameResultModal 呼び出し:', { result, message });
     
     const modal = document.getElementById('game-result-modal');
     const icon = document.getElementById('result-icon');
     const title = document.getElementById('result-title');
+    const subtitle = document.getElementById('result-subtitle');
     const messageElement = document.getElementById('result-message');
     
-    // 結果に応じてアイコン・タイトル・色を設定
-    let iconText, titleText, titleClass;
+    // シンプルな結果設定
+    let iconText, titleText, subtitleText;
     
-    console.log('🔍 switch文 実行前の result:', result);
     switch (result) {
         case 'victory':
         case 'player_victory':
         case 'enemy_defeat':
-            iconText = '🎉';
+            iconText = '🏆';
             titleText = '勝利';
-            titleClass = 'victory';
-            console.log('🏆 勝利ケース適用');
+            subtitleText = 'おめでとうございます';
             break;
         case 'defeat':
         case 'player_defeat':
         case 'enemy_victory':
-            iconText = '😵';
+            iconText = '😔';
             titleText = '敗北';
-            titleClass = 'defeat';
-            console.log('💀 敗北ケース適用');
+            subtitleText = 'また挑戦しましょう';
             break;
         case 'draw':
             iconText = '🤝';
             titleText = '引き分け';
-            titleClass = 'draw';
-            console.log('🤝 引き分けケース適用');
+            subtitleText = '良い戦いでした';
             break;
         default:
-            iconText = '🏁';
-            titleText = 'ゲーム終了';
-            titleClass = '';
-            console.log('⚠️ デフォルトケース適用 - 予期しない結果:', result);
+            iconText = '🌟';
+            titleText = '終了';
+            subtitleText = 'お疲れ様でした';
+            break;
     }
     
-    // モーダル内容を更新
+    // シンプルな内容設定
     icon.textContent = iconText;
     title.textContent = titleText;
-    title.className = `result-title ${titleClass}`;
-    messageElement.textContent = message;
+    subtitle.textContent = subtitleText;
+    messageElement.textContent = message || '素晴らしい戦略でした！';
     
     // モーダル表示
     modal.style.display = 'flex';
-    console.log('🎭 モーダル表示完了:', { result, iconText, titleText, message });
+    console.log('✨ ミニマルモーダル表示完了:', { result, iconText, titleText });
 }
+
+
+
+
 
 // スラッシュエフェクト表示（実装保留）
 function showSlashEffect(target, isEffective = false, attackerElement = null) {
@@ -1791,10 +1832,17 @@ elements.skipActionBtn.addEventListener('click', () => {
                 if (checkBattleEnd()) {
                     nextPhase();
                 } else {
-                    // 次の行動者がAIの場合、自動で行動
+                    // 次の行動者を自動で開始（プレイヤー・敵問わず）
                     const nextCard = gameState.turnOrder.find(card => !card.hasActed);
-                    if (nextCard && !nextCard.isPlayer) {
-                        enemyAutoAttack(nextCard);
+                    if (nextCard) {
+                        if (nextCard.isPlayer) {
+                            // プレイヤーカード即座に自動攻撃開始
+                            console.log('🎯 次のプレイヤーカード自動攻撃:', nextCard.name);
+                            showMessage(`💫 ${nextCard.name}の攻撃開始`);
+                            startAttack(nextCard);
+                        } else {
+                            enemyAutoAttack(nextCard);
+                        }
                     }
                 }
             }, 1000);
@@ -1860,9 +1908,9 @@ document.getElementById('help-modal').addEventListener('click', (e) => {
     }
 });
 
-// 🎭 勝敗結果モーダルイベントリスナー
+// 🎭 勝敗結果モーダルイベントリスナー（アジア美学版）
 document.getElementById('result-restart-btn').addEventListener('click', () => {
-    console.log('🔄 結果モーダルからゲーム再開');
+    console.log('🔄 アジア美学結果モーダルからゲーム再開');
     SoundManager.play('button');
     
     // モーダルを閉じる

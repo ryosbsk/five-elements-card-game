@@ -11,16 +11,52 @@
     <!-- ゲーム開始画面 -->
     <div id="start-screen" class="start-screen">
         <div class="start-content">
-            <h1>🌟 ELEMENTAL 🌟</h1>
-            <p>五行の力を使って戦略的バトル！</p>
-            <div class="game-description">
-                <div class="rule-item">⚔️ 3vs3のカードバトル</div>
-                <div class="rule-item">💎 PPでカードを召喚</div>
-                <div class="rule-item">🏆 敵カード5コスト撃破で勝利</div>
+            <div class="title-section">
+                <h1 class="main-title">ELEMENTAL</h1>
+                <div class="subtitle">五行カードバトル</div>
             </div>
+            
+            <p class="tagline">五行の力で戦略バトルを楽しもう！</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">スピード戦闘</div>
+                    <div class="feature-desc">行動順序が勝負のカギ</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <div class="feature-title">戦略バトル</div>
+                    <div class="feature-desc">5コスト撃破で勝利</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌿</div>
+                    <div class="feature-title">五行相剋</div>
+                    <div class="feature-desc">属性の相性が重要</div>
+                </div>
+            </div>
+            
             <button id="start-game-btn" class="start-button">
-                🎮 ゲーム開始
+                <span class="button-text">ゲーム開始</span>
+                <div class="button-arrow">→</div>
             </button>
+            
+            <div class="game-stats">
+                <div class="stat-item">
+                    <div class="stat-number">3vs3</div>
+                    <div class="stat-label">対戦</div>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-item">
+                    <div class="stat-number">10種</div>
+                    <div class="stat-label">カード</div>
+                </div>
+                <div class="stat-divider">|</div>
+                <div class="stat-item">
+                    <div class="stat-number">∞</div>
+                    <div class="stat-label">戦略</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -313,24 +349,41 @@
         </div>
     </div>
 
-    <!-- フェーズポップアップモーダル -->
+    <!-- フェーズポップアップモーダル - ミニマル版 -->
     <div id="phase-popup-modal" class="phase-popup-modal" style="display: none;">
         <div class="phase-popup-content">
-            <div id="phase-popup-icon" class="phase-popup-icon">⚔️</div>
-            <div id="phase-popup-text" class="phase-popup-text">戦闘フェーズ</div>
+            <div class="phase-info">
+                <div id="phase-popup-icon" class="phase-popup-icon">⚔️</div>
+                <div id="phase-popup-text" class="phase-popup-text">戦闘フェーズ</div>
+            </div>
         </div>
     </div>
 
-    <!-- ゲーム結果モーダル -->
+    <!-- ゲーム結果モーダル - ミニマル版 -->
     <div id="game-result-modal" class="result-modal" style="display: none;">
         <div class="result-overlay"></div>
+        
         <div class="result-content">
-            <div id="result-icon" class="result-icon">🏆</div>
-            <h2 id="result-title" class="result-title">勝利！</h2>
-            <p id="result-message" class="result-message">敵カード5コストを撃破しました</p>
+            <!-- シンプルな結果表示 -->
+            <div class="result-header">
+                <div id="result-icon" class="result-icon">🏆</div>
+                <h1 id="result-title" class="result-title">勝利</h1>
+                <div id="result-subtitle" class="result-subtitle">おめでとうございます</div>
+            </div>
+            
+            <!-- シンプルなメッセージ -->
+            <div class="result-message-section">
+                <p id="result-message" class="result-message">素晴らしい戦略でした！</p>
+            </div>
+            
+            <!-- ボタンエリア -->
             <div class="result-buttons">
-                <button id="result-restart-btn" class="result-restart-btn">ゲーム再開</button>
-                <button id="result-close-btn" class="result-close-btn">閉じる</button>
+                <button id="result-restart-btn" class="result-button primary">
+                    再戦
+                </button>
+                <button id="result-close-btn" class="result-button secondary">
+                    閉じる
+                </button>
             </div>
         </div>
     </div>
