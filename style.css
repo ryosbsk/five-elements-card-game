@@ -84,39 +84,52 @@ body {
 }
 
 .game-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 8px;
+    max-width: 100vw;
+    margin: 0;
+    padding: 4px;
     position: relative;
     display: grid !important;
+    /* スマホ横向け専用レイアウト */
     grid-template-areas: 
-        "turn-order enemy-area enemy-area"
-        "turn-order player-area player-area"
-        "player-control-zone player-control-zone player-control-zone";
-    grid-template-columns: 220px 1fr 2fr;
-    grid-template-rows: auto auto 1fr;
-    gap: 8px;
-    min-height: 100vh;
+        "turn-order battlefield controls"
+        "hand-area hand-area hand-area";
+    grid-template-columns: 180px 1fr 200px;
+    grid-template-rows: 1fr auto;
+    gap: 6px;
+    height: 100vh;
+    width: 100vw;
 }
 
 
 /* エリア */
-.enemy-area {
-    grid-area: enemy-area;
+/* 統合戦闘フィールド */
+.battlefield-area {
+    grid-area: battlefield;
     background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
     border: 2px solid #e9ecef;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 12px 16px;
+    padding: 8px;
     border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
 }
 
+/* 敵エリア（統合フィールド内） */
+.enemy-area {
+    background: linear-gradient(145deg, #ffebee 0%, #fce4ec 100%);
+    border: 1px solid #f8bbd9;
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 8px;
+}
+
+/* プレイヤーエリア（統合フィールド内） */
 .player-area {
-    grid-area: player-area;
-    background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-    border: 2px solid #e9ecef;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    padding: 12px 16px;
-    border-radius: 10px;
+    background: linear-gradient(145deg, #e8f5e8 0%, #f1f8e9 100%);
+    border: 1px solid #c8e6c9;
+    border-radius: 8px;
+    padding: 8px;
 }
 
 /* 敵情報オーバーレイ */
@@ -165,7 +178,47 @@ body {
     font-weight: bold;
 }
 
-/* プレイヤー統合コントロールゾーン */
+/* 手札エリア（横向きレイアウト用） */
+.hand-area {
+    grid-area: hand-area;
+    background: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* コントロールエリア（横向きレイアウト用） */
+.controls-area {
+    grid-area: controls;
+    background: #ffffff;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+}
+
+/* 簡略版メッセージ（コントロールエリア用） */
+.current-message-compact {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    padding: 4px;
+    background: #f9f9f9;
+    border-radius: 6px;
+    margin-top: 8px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 旧コントロールゾーン（後方互換用） */
 .player-control-zone {
     grid-area: player-control-zone;
     background: #ffffff;
@@ -2076,5 +2129,97 @@ body {
         padding: 10px 20px;
         font-size: 1rem;
         min-width: 100px;
+    }
+}
+
+/* =============================================
+   📱 スマホ横向け専用最適化
+   ============================================= */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+    /* 基本レイアウト調整 */
+    .game-container {
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        grid-template-columns: 150px 1fr 180px;
+        grid-template-rows: 1fr 120px;
+        gap: 4px;
+        padding: 2px;
+    }
+    
+    /* 戦闘フィールド最適化 */
+    .battlefield-area {
+        padding: 4px;
+        gap: 4px;
+    }
+    
+    .enemy-area, .player-area {
+        padding: 4px;
+        margin-bottom: 4px;
+    }
+    
+    /* カードサイズ調整 */
+    .card-slot {
+        width: 50px;
+        height: 70px;
+    }
+    
+    .card {
+        width: 45px;
+        height: 65px;
+        font-size: 8px;
+    }
+    
+    /* 手札エリア最適化 */
+    .hand-area {
+        padding: 4px;
+        height: 116px;
+        overflow: hidden;
+    }
+    
+    .hand-cards {
+        height: 100%;
+        padding: 2px;
+        gap: 4px;
+    }
+    
+    .hand-cards .card {
+        width: 60px;
+        height: 90px;
+    }
+    
+    /* コントロールエリア最適化 */
+    .controls-area {
+        padding: 4px;
+        gap: 6px;
+    }
+    
+    .action-button {
+        padding: 6px 8px;
+        font-size: 10px;
+        margin: 2px 0;
+        min-height: 28px;
+    }
+    
+    .current-message-compact {
+        font-size: 10px;
+        padding: 2px;
+        margin-top: 4px;
+    }
+    
+    /* 行動順エリア最適化 */
+    .turn-order-area {
+        padding: 4px;
+    }
+    
+    .turn-order-card {
+        padding: 4px;
+        font-size: 10px;
+    }
+    
+    /* フォントサイズ全体調整 */
+    .enemy-info-compact, .player-info-compact {
+        font-size: 10px;
+        padding: 2px;
     }
 }
