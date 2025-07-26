@@ -6,20 +6,23 @@
     <title>ELEMENTAL</title>
     <link rel="icon" href="data:,"> <!-- favicon 404エラー防止 -->
     <link rel="stylesheet" href="style.css">
+    <!-- Tailwind CSS CDN (実験用) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind動作確認: ゲーム開始ボタンにhover:scale-105効果を追加済み -->
 </head>
 <body>
     <!-- ゲーム開始画面 -->
     <div id="start-screen" class="start-screen">
         <div class="start-content">
-            <h1>🌟 ELEMENTAL 🌟</h1>
+            <h1>ELEMENTAL</h1>
             <p>五行の力を使って戦略的バトル！</p>
             <div class="game-description">
                 <div class="rule-item">⚔️ 3vs3のカードバトル</div>
                 <div class="rule-item">💎 PPでカードを召喚</div>
                 <div class="rule-item">🏆 敵カード5コスト撃破で勝利</div>
             </div>
-            <button id="start-game-btn" class="start-button">
-                🎮 ゲーム開始
+            <button id="start-game-btn" class="start-button hover:scale-105 transition-transform duration-200">
+                ゲーム開始
             </button>
         </div>
     </div>
