@@ -1,0 +1,70 @@
+{
+  "Japanese Console Log": {
+    "prefix": "jclog",
+    "body": [
+      "console.log('🎯 ${1:処理名}:', ${2:変数});"
+    ],
+    "description": "日本語絵文字付きconsole.log"
+  },
+  "Game State Debug": {
+    "prefix": "gdebug",
+    "body": [
+      "console.log('🎮 ゲーム状態確認:', {",
+      "  'フェーズ': gameState.currentPhase,",
+      "  'ターン': gameState.currentTurn,",
+      "  'プレイヤーPP': gameState.playerPP,",
+      "  '敵PP': gameState.enemyPP",
+      "});"
+    ],
+    "description": "ゲーム状態デバッグ用ログ"
+  },
+  "Card Debug Info": {
+    "prefix": "cdebug",
+    "body": [
+      "console.log('🃏 カード詳細:', {",
+      "  'カード名': ${1:card}.name,",
+      "  '属性': ${1:card}.element,",
+      "  'HP': ${1:card}.hp,",
+      "  '攻撃力': ${1:card}.attack,",
+      "  'スピード': ${1:card}.speed",
+      "});"
+    ],
+    "description": "カード情報デバッグ用ログ"
+  },
+  "DOM Element Check": {
+    "prefix": "domcheck",
+    "body": [
+      "console.log('🔍 DOM要素確認:', {",
+      "  '要素': ${1:element},",
+      "  '存在': !!${1:element},",
+      "  'クラス': ${1:element}?.className,",
+      "  'スタイル': ${1:element}?.style.cssText",
+      "});"
+    ],
+    "description": "DOM要素存在確認用ログ"
+  },
+  "Battle System Debug": {
+    "prefix": "bdebug",
+    "body": [
+      "console.log('⚔️ 戦闘システム:', {",
+      "  '攻撃者': ${1:attacker}.name,",
+      "  '防御者': ${2:defender}.name,",
+      "  '基本ダメージ': ${3:baseDamage},",
+      "  '相剋ボーナス': ${4:bonus},",
+      "  '最終ダメージ': ${5:finalDamage}",
+      "});"
+    ],
+    "description": "戦闘システムデバッグ用ログ"
+  },
+  "UI Update Trace": {
+    "prefix": "uitrace",
+    "body": [
+      "console.log('🎨 UI更新:', {",
+      "  '対象': '${1:要素名}',",
+      "  '変更内容': '${2:変更内容}',",
+      "  '実行時刻': new Date().toLocaleTimeString()",
+      "});"
+    ],
+    "description": "UI更新追跡用ログ"
+  }
+}

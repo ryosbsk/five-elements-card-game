@@ -1,6 +1,34 @@
 // 五行カードバトルゲーム
 
+/**
+ * @typedef {Object} Card
+ * @property {number} id - カードID
+ * @property {string} name - カード名
+ * @property {string} element - 属性（木火土金水）
+ * @property {number} cost - コスト
+ * @property {number} hp - 体力
+ * @property {number} attack - 攻撃力
+ * @property {number} speed - スピード
+ * @property {boolean} isPlayer - プレイヤーカードか
+ * @property {boolean} hasActed - 行動済みか
+ */
+
+/**
+ * @typedef {Object} GameState
+ * @property {Card[]} playerField - プレイヤーフィールド
+ * @property {Card[]} enemyField - 敵フィールド
+ * @property {Card[]} playerHand - プレイヤー手札
+ * @property {Card[]} enemyHand - 敵手札
+ * @property {number} playerPP - プレイヤーPP
+ * @property {number} enemyPP - 敵PP
+ * @property {number} turn - ターン数
+ * @property {string} phase - フェーズ（summon/battle）
+ * @property {number} defeatedCost - 撃破済みコスト
+ * @property {Array<{text: string, timestamp: number}>} messageHistory - メッセージ履歴
+ */
+
 // SE・BGM管理システム 🔊
+/** @type {Object} */
 const SoundManager = {
     sounds: {},
     bgm: null,
@@ -45,26 +73,99 @@ const SoundManager = {
         }
     },
     
-    // SE再生
+    // 🚀 非同期初期化メソッド（Promise対応）
+    initAsync: function() {
+        return new Promise((resolve, reject) => {
+            console.log('🔊 SoundManager非同期初期化開始');
+            
+            try {
+                this.init(); // 既存の init() 実行
+                
+                // 初期化完了確認（少し待機）
+                setTimeout(() => {
+                    const isInitialized = !!this.sounds.button && !!this.bgm;
+                    
+                    if (isInitialized) {
+                        console.log('✅ SoundManager非同期初期化成功:', {
+                            '登録SE数': Object.keys(this.sounds).length,
+                            'BGM存在': !!this.bgm,
+                            'button SE': !!this.sounds.button
+                        });
+                        resolve(true);
+                    } else {
+                        console.warn('⚠️ SoundManager初期化不完全');
+                        resolve(false); // reject ではなく resolve で継続
+                    }
+                }, 150); // 少し長めの待機時間
+                
+            } catch (error) {
+                console.error('❌ SoundManager初期化エラー:', error);
+                resolve(false); // reject ではなく resolve で継続
+            }
+        });
+    },
+    
+    // SE再生（詳細トレーシング付き）
     play: function(soundName) {
         if (!this.seEnabled) {
             console.log('🔇 SE無効のため再生スキップ:', soundName);
             return;
         }
         
+        // 🔍 詳細ログ: 登録済みSE一覧
+        console.log('🔍 SE再生要求:', {
+            '要求SE': soundName,
+            '登録済みSE一覧': Object.keys(this.sounds),
+            'SE有効状態': this.seEnabled,
+            '対象SE存在確認': soundName in this.sounds
+        });
+        
         const sound = this.sounds[soundName];
         if (sound) {
             try {
                 // 再生位置をリセットして再生
                 sound.currentTime = 0;
-                sound.play();
-                console.log('🔊 SE再生:', soundName);
+                const playPromise = sound.play();
+                console.log('🔊 SE再生開始:', soundName);
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(() => {
+                        console.log('✅ SE再生成功:', soundName);
+                    }).catch(error => {
+                        console.warn('⚠️ SE再生失敗:', soundName, error);
+                    });
+                }
             } catch (error) {
                 console.warn('⚠️ SE再生エラー:', soundName, error);
             }
         } else {
-            console.warn('❌ SE未登録:', soundName);
+            console.warn('❌ SE未登録:', soundName, {
+                '利用可能SE': Object.keys(this.sounds),
+                'sounds_object': this.sounds
+            });
         }
+    },
+    
+    // BGM音量設定（Alpine.js連携用）
+    setBGMVolume: function(volume) {
+        const volumeValue = volume / 100; // 0-100 を 0-1 に変換
+        if (this.bgm) {
+            this.bgm.volume = volumeValue;
+            console.log('🎵 BGM音量設定:', `${volume}% (${volumeValue})`);
+        } else {
+            console.warn('⚠️ BGM要素が存在しません');
+        }
+    },
+    
+    // SE音量設定（Alpine.js連携用）
+    setSEVolume: function(volume) {
+        const volumeValue = volume / 100; // 0-100 を 0-1 に変換
+        Object.values(this.sounds).forEach(sound => {
+            if (sound) {
+                sound.volume = volumeValue;
+            }
+        });
+        console.log('🔊 SE音量設定:', `${volume}% (${volumeValue}) - 対象SE数: ${Object.keys(this.sounds).length}`);
     },
     
     // BGM再生開始（ユーザー操作後に実行）
@@ -101,20 +202,7 @@ const SoundManager = {
         }
     },
     
-    // 音量設定
-    setBGMVolume: function(volume) {
-        if (this.bgm) {
-            this.bgm.volume = volume / 100;
-            console.log('🎵 BGM音量設定:', volume);
-        }
-    },
-    
-    setSEVolume: function(volume) {
-        Object.values(this.sounds).forEach(sound => {
-            sound.volume = volume / 100;
-        });
-        console.log('🔊 SE音量設定:', volume);
-    },
+    // 重複したメソッドを削除（上部の新しいバージョンを使用）
     
     // SE有効/無効切り替え
     toggleSE: function() {
@@ -172,6 +260,7 @@ const cardData = [
 ];
 
 // ゲーム状態
+/** @type {GameState} */
 let gameState = {
     phase: 'draw',
     turn: 1,
@@ -198,7 +287,8 @@ let gameState = {
     messageHistory: []
 };
 
-// DOM要素
+// DOM要素（詳細トレーシング付き）
+console.log('🔍 DOM要素取得開始...');
 const elements = {
     phase: document.getElementById('current-phase'),
     turn: document.getElementById('turn-counter'),
@@ -207,26 +297,64 @@ const elements = {
     enemyHandCount: document.getElementById('enemy-hand-count'),
     enemyPP: document.getElementById('enemy-pp'),
     enemyVictory: document.getElementById('enemy-victory-counter'),
-    message: document.getElementById('game-message'),
+    message: document.getElementById('game-message'), // 旧要素（後方互換用）
+    messageFeed: document.getElementById('message-feed'),
     playerHand: document.getElementById('player-hand'),
+    summonToBattleBtn: document.getElementById('summon-to-battle-btn'),
     endTurnBtn: document.getElementById('end-turn-btn'),
+    restartGameBtn: document.getElementById('restart-game-btn'),
     skipActionBtn: document.getElementById('skip-action-btn'),
-    restartBtn: document.getElementById('restart-btn'),
+    waitingBtn: document.getElementById('waiting-btn'),
     gameBackground: document.getElementById('game-background'),
+    // 降参関連要素
+    surrenderModal: document.getElementById('surrender-modal'),
+    surrenderConfirmBtn: document.getElementById('surrender-confirm-btn'),
+    surrenderCancelBtn: document.getElementById('surrender-cancel-btn'),
+    // ハンバーガーメニュー関連
+    hamburgerBtn: document.getElementById('hamburger-btn'),
+    hamburgerMenu: document.getElementById('hamburger-menu'),
+    surrenderMenuBtn: document.getElementById('surrender-menu-btn'),
     // スタート画面要素
     startScreen: document.getElementById('start-screen'),
     startBtn: document.getElementById('start-game-btn'),
     gameContainer: document.getElementById('game-container'),
-    // 統合コントロールパネル要素
-    controlPanel: document.getElementById('control-panel'),
+    // 音響コントロール要素
     audioToggle: document.getElementById('audio-toggle'),
-    audioPanel: document.getElementById('audio-panel'),
-    audioClose: document.getElementById('audio-close'),
-    bgmToggle: document.getElementById('bgm-toggle'),
-    seToggle: document.getElementById('se-toggle'),
-    bgmVolume: document.getElementById('bgm-volume'),
-    seVolume: document.getElementById('se-volume')
+    audioPanel: document.getElementById('audio-panel')
+    // audioClose, bgmToggle, seToggle, bgmVolume, seVolume は Alpine.js で処理
 };
+
+// 🔍 DOM要素取得状況の詳細確認
+console.log('🔍 DOM要素取得結果:', {
+    'endTurnBtn': !!elements.endTurnBtn ? '✅ 取得成功' : '❌ 取得失敗',
+    'skipActionBtn': !!elements.skipActionBtn ? '✅ 取得成功' : '❌ 取得失敗', 
+    'hamburgerBtn': !!elements.hamburgerBtn ? '✅ 取得成功' : '❌ 取得失敗',
+    'hamburgerMenu': !!elements.hamburgerMenu ? '✅ 取得成功' : '❌ 取得失敗',
+    'audioToggle': !!elements.audioToggle ? '✅ 取得成功' : '❌ 取得失敗',
+    'audioPanel': !!elements.audioPanel ? '✅ 取得成功' : '❌ 取得失敗'
+});
+
+// 🔍 重要ボタンの詳細情報
+if (elements.endTurnBtn) {
+    console.log('🎮 endTurnBtn詳細:', {
+        'id': elements.endTurnBtn.id,
+        'className': elements.endTurnBtn.className,
+        'textContent': elements.endTurnBtn.textContent,
+        'style.display': elements.endTurnBtn.style.display,
+        'disabled': elements.endTurnBtn.disabled
+    });
+} else {
+    // 代替検索
+    const endTurnSearch = document.querySelector('#end-turn-btn, [id="end-turn-btn"], button[class*="end-turn"]');
+    console.log('🔍 endTurnBtn代替検索結果:', {
+        '直接querySelector結果': !!endTurnSearch,
+        '要素詳細': endTurnSearch ? {
+            'tagName': endTurnSearch.tagName,
+            'id': endTurnSearch.id,
+            'className': endTurnSearch.className
+        } : 'なし'
+    });
+}
 
 // ユーティリティ関数
 function shuffleArray(array) {
@@ -250,7 +378,19 @@ function createCard(cardData, isPlayer = true) {
 
 function createCardElement(card) {
     const cardElement = document.createElement('div');
-    cardElement.className = `card ${card.element}`;
+    
+    // 五行属性に応じた色彩システム
+    const elementColors = {
+        '木': 'border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-100 hover:from-emerald-100 hover:to-green-200',
+        '火': 'border-red-400 bg-gradient-to-br from-red-50 to-rose-100 hover:from-red-100 hover:to-rose-200',
+        '土': 'border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-100 hover:from-amber-100 hover:to-yellow-200',
+        '金': 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-100 hover:from-yellow-100 hover:to-amber-200',
+        '水': 'border-blue-400 bg-gradient-to-br from-blue-50 to-cyan-100 hover:from-blue-100 hover:to-cyan-200'
+    };
+    
+    const elementColorClass = elementColors[card.element] || 'border-gray-400 bg-gradient-to-br from-gray-50 to-gray-100';
+    
+    cardElement.className = `card ${card.element} ${elementColorClass} rounded-xl shadow-lg hover:shadow-2xl border-2 transform hover:scale-105 transition-all duration-300 cursor-pointer relative overflow-hidden`;
     cardElement.dataset.cardId = card.id;
     
     cardElement.innerHTML = `
@@ -316,30 +456,70 @@ function updateDisplay() {
     updateHandDisplay();
     updateFieldDisplay();
     
-    // ボタンの状態管理
-    if (gameState.phase === 'summon') {
-        elements.endTurnBtn.textContent = '戦闘フェーズへ';
-        elements.endTurnBtn.disabled = false;
-        elements.endTurnBtn.style.display = 'inline-block';
-        elements.skipActionBtn.style.display = 'none';
-    } else if (gameState.phase === 'battle') {
-        // 戦闘フェーズ中は行動スキップボタンのみ表示
-        const currentTurnCard = gameState.turnOrder.find(card => !card.hasActed);
-        if (currentTurnCard && currentTurnCard.isPlayer) {
-            elements.skipActionBtn.style.display = 'inline-block';
-            elements.skipActionBtn.disabled = false;
-        } else {
-            elements.skipActionBtn.style.display = 'none';
-        }
-        elements.endTurnBtn.style.display = 'none';
-    } else {
-        elements.endTurnBtn.disabled = true;
-        elements.endTurnBtn.style.display = 'inline-block';
-        elements.skipActionBtn.style.display = 'none';
-    }
+    // 🎮 統一ボタン管理システム
+    updateButtonStates();
     
     // 🔍 フェーズスキップ検出機能
     detectPhaseSkip();
+}
+
+// 🎮 統一ボタン状態管理システム
+function updateButtonStates() {
+    if (!elements.endTurnBtn || !elements.skipActionBtn) {
+        console.warn('⚠️ ボタン要素が見つかりません');
+        return;
+    }
+    
+    console.log('🎮 ボタン状態更新:', {
+        'フェーズ': gameState.phase,
+        'ゲーム終了': gameState.gameOver || false,
+        'ボタンテキスト': elements.endTurnBtn.textContent
+    });
+    
+    // 全ボタン非表示にリセット
+    elements.summonToBattleBtn.style.display = 'none';
+    elements.endTurnBtn.style.display = 'none';
+    elements.restartGameBtn.style.display = 'none';
+    elements.skipActionBtn.style.display = 'none';
+    elements.waitingBtn.style.display = 'none';
+    
+    // ゲーム終了時の処理
+    if (gameState.gameOver) {
+        console.log('🎮 ゲーム終了状態 - ゲーム再開ボタンを表示');
+        elements.restartGameBtn.style.display = 'inline-block';
+        return;
+    }
+    
+    switch (gameState.phase) {
+        case 'summon':
+            elements.summonToBattleBtn.style.display = 'inline-block';
+            break;
+            
+        case 'battle':
+            // 戦闘フェーズ中の適切なボタン表示
+            const currentTurnCard = gameState.turnOrder?.find(card => !card.hasActed);
+            if (currentTurnCard && currentTurnCard.isPlayer) {
+                elements.skipActionBtn.style.display = 'inline-block';
+            } else if (currentTurnCard && !currentTurnCard.isPlayer) {
+                // 敵のターン中は待機ボタンを表示
+                elements.waitingBtn.style.display = 'inline-block';
+            } else {
+                // 全員行動完了時はターン終了ボタン
+                elements.endTurnBtn.style.display = 'inline-block';
+            }
+            break;
+            
+        default:
+            elements.endTurnBtn.style.display = 'inline-block';
+            elements.endTurnBtn.disabled = true;
+            break;
+    }
+    
+    console.log('✅ ボタン状態更新完了:', {
+        'endTurnBtn.textContent': elements.endTurnBtn.textContent,
+        'endTurnBtn.disabled': elements.endTurnBtn.disabled,
+        'skipActionBtn.display': elements.skipActionBtn.style.display
+    });
 }
 
 function detectPhaseSkip() {
@@ -413,28 +593,57 @@ function updateFieldDisplay() {
             
             // 相打ちシステム削除済み
             
-            // 戦闘フェーズでの攻撃クリック
+            // 🔒 戦闘フェーズでの厳密な攻撃選択制御
             if (gameState.phase === 'battle' && !gameState.playerField[i].hasActed) {
                 // 現在の行動順序をチェック
                 const currentTurnCard = gameState.turnOrder.find(card => !card.hasActed);
-                if (currentTurnCard && currentTurnCard.id === gameState.playerField[i].id) {
+                
+                // 🚫 選択可能性の厳密な条件チェック
+                const isCurrentPlayerTurn = currentTurnCard && currentTurnCard.id === gameState.playerField[i].id;
+                const isNotInAttackMode = !gameState.attackMode;
+                const isNotProcessingAction = !gameState.isProcessingAction; // 処理中フラグ（必要に応じて追加）
+                
+                console.log('🔍 カード選択可能性チェック:', {
+                    'カード名': gameState.playerField[i].name,
+                    '現在のターン': isCurrentPlayerTurn,
+                    '攻撃モード外': isNotInAttackMode,
+                    '選択可能': isCurrentPlayerTurn && isNotInAttackMode
+                });
+                
+                if (isCurrentPlayerTurn && isNotInAttackMode) {
                     cardElement.addEventListener('click', (event) => {
+                        // 🔒 実行時の再確認（ダブルクリック防止）
                         if (gameState.gameOver) {
                             console.log('🚫 ゲーム終了済み - 攻撃選択無効');
                             return;
                         }
+                        if (gameState.attackMode) {
+                            console.log('🚫 攻撃モード中 - 重複選択無効');
+                            return;
+                        }
+                        if (gameState.playerField[i].hasActed) {
+                            console.log('🚫 行動済み - 攻撃選択無効');
+                            return;
+                        }
+                        
                         console.log('🎯 プレイヤーカードクリック:', gameState.playerField[i].name, 'で攻撃開始準備！');
                         event.stopPropagation(); // 親要素への伝播を防止
-                        if (!gameState.attackMode) {
-                            console.log('⚔️ 攻撃モード開始:', gameState.playerField[i].name, '→ 敵を選択してください');
-                            startAttack(gameState.playerField[i]);
-                        } else {
-                            console.log('⚠️ 攻撃モード既に有効中です');
-                        }
+                        
+                        console.log('⚔️ 攻撃モード開始:', gameState.playerField[i].name, '→ 敵を選択してください');
+                        startAttack(gameState.playerField[i]);
                     });
                     cardElement.classList.add('selectable');
                     cardElement.classList.add('current-turn');
+                } else {
+                    // 🔒 選択不可状態を明示
+                    cardElement.classList.remove('selectable');
+                    cardElement.classList.remove('current-turn');
+                    console.log('🔒 カード選択不可:', gameState.playerField[i].name, '（条件未満足）');
                 }
+            } else {
+                // 🔒 戦闘フェーズ外または行動済みカードは選択不可
+                cardElement.classList.remove('selectable');
+                cardElement.classList.remove('current-turn');
             }
             
             slot.innerHTML = '';
@@ -549,6 +758,31 @@ function updateEnemyFieldOnly() {
 }
 
 function showMessage(message) {
+    // 🔍 重複バグ解析用ログシステム
+    console.log('📝 showMessage呼び出し:', {
+        'メッセージ': message,
+        '呼び出し時刻': new Date().toLocaleTimeString(),
+        '現在のメッセージ履歴数': gameState.messageHistory.length,
+        '直前のメッセージ': gameState.messageHistory[gameState.messageHistory.length - 1]?.text || 'なし'
+    });
+    
+    // 🚨 重複検出ログ
+    const isDuplicate = gameState.messageHistory.length > 0 && 
+                       gameState.messageHistory[gameState.messageHistory.length - 1].text === message;
+    if (isDuplicate) {
+        console.warn('⚠️ 重複メッセージ検出!', {
+            '重複メッセージ': message,
+            'スタックトレース': new Error().stack
+        });
+    }
+    
+    // 📊 呼び出し元追跡（スタックトレース）
+    const stack = new Error().stack.split('\n');
+    console.log('🎯 showMessage呼び出し元:', {
+        '直接呼び出し元': stack[2]?.trim() || '不明',
+        '関数チェーン': stack.slice(1, 4).map(line => line.trim())
+    });
+    
     // 履歴に追加
     gameState.messageHistory.push({
         text: message,
@@ -565,38 +799,134 @@ function showMessage(message) {
 }
 
 function updateMessageDisplay() {
-    const messageElement = elements.message;
-    const historyListElement = document.getElementById('message-history-list');
+    console.log('🔍 メッセージ表示更新開始');
+    const messageFeed = elements.messageFeed;
     
-    // 最新のメッセージを表示
-    const latestMessage = gameState.messageHistory[gameState.messageHistory.length - 1];
-    if (latestMessage) {
-        messageElement.textContent = latestMessage.text;
+    if (!messageFeed) {
+        console.warn('❌ messageFeed element not found');
+        return;
     }
     
-    // 履歴リストを更新
-    if (historyListElement) {
-        historyListElement.innerHTML = '';
+    console.log('📊 メッセージフィード状態:', {
+        '要素ID': messageFeed.id,
+        'クラス': messageFeed.className,
+        '初期高さ': messageFeed.scrollHeight,
+        '初期スクロール位置': messageFeed.scrollTop,
+        '表示エリア高さ': messageFeed.clientHeight
+    });
+    
+    // フィードをクリア
+    messageFeed.innerHTML = '';
+    
+    // 五行属性メッセージ色彩マッピング
+    const elementMessageColors = {
+        '木': 'border-l-4 border-emerald-400 bg-emerald-50 text-emerald-800',
+        '火': 'border-l-4 border-red-400 bg-red-50 text-red-800',
+        '土': 'border-l-4 border-amber-400 bg-amber-50 text-amber-800',
+        '金': 'border-l-4 border-yellow-400 bg-yellow-50 text-yellow-800',
+        '水': 'border-l-4 border-blue-400 bg-blue-50 text-blue-800'
+    };
+    
+    // 最新15件を表示
+    const recentMessages = gameState.messageHistory.slice(-15);
+    recentMessages.forEach((msg, index) => {
+        const msgElement = document.createElement('div');
         
-        // 最新10件を表示
-        gameState.messageHistory.slice(-10).forEach(msg => {
-            const item = document.createElement('div');
-            item.className = 'message-history-item';
-            
-            // 敵の行動か判定
-            if (msg.text.includes('敵の') || msg.text.includes('敵が')) {
-                item.className += ' enemy-action';
-            } else if (msg.text.includes('が') && msg.text.includes('に') && msg.text.includes('ダメージ')) {
-                item.className += ' player-action';
+        // 基本スタイル
+        let baseClass = 'px-3 py-2 mb-2 rounded-lg text-xs transition-all duration-300';
+        
+        // 五行属性効果メッセージの色彩適用
+        let elementColor = '';
+        for (const [element, color] of Object.entries(elementMessageColors)) {
+            if (msg.text.includes(`${element}は`) || msg.text.includes(`${element}が`)) {
+                elementColor = color;
+                break;
             }
-            
-            item.textContent = msg.text;
-            historyListElement.appendChild(item);
+        }
+        
+        // メッセージタイプ別色彩適用
+        if (elementColor) {
+            // 属性効果メッセージ
+            msgElement.className = `${baseClass} ${elementColor} font-semibold`;
+        } else if (msg.text.includes('敵の') || msg.text.includes('敵が') || msg.text.includes('攻撃')) {
+            // 戦闘メッセージ
+            msgElement.className = `${baseClass} border-l-4 border-red-400 bg-red-50 text-red-700`;
+        } else if (msg.text.includes('ターン') || msg.text.includes('フェーズ')) {
+            // システムメッセージ
+            msgElement.className = `${baseClass} border-l-4 border-gray-400 bg-gray-50 text-gray-700`;
+        } else if (msg.text.includes('勝利') || msg.text.includes('敗北')) {
+            // 結果メッセージ
+            msgElement.className = `${baseClass} border-l-4 border-purple-400 bg-purple-50 text-purple-700 font-bold`;
+        } else {
+            // 一般メッセージ
+            msgElement.className = `${baseClass} border-l-4 border-blue-400 bg-blue-50 text-blue-700`;
+        }
+        
+        // 最新メッセージはハイライト
+        if (index === recentMessages.length - 1) {
+            msgElement.classList.add('ring-2', 'ring-yellow-300', 'shadow-lg');
+        }
+        
+        msgElement.textContent = msg.text;
+        messageFeed.appendChild(msgElement);
+    });
+    
+    // 📍 詳細スクロールデバッグログ追加
+    console.log('📍 スクロール開始:', {
+        '要素存在': !!messageFeed,
+        'メッセージ数': recentMessages.length,
+        '現在の高さ': messageFeed.scrollHeight,
+        '現在のスクロール位置': messageFeed.scrollTop,
+        '表示エリア高さ': messageFeed.clientHeight
+    });
+    
+    // 最下部にスクロール（強制再描画付き）
+    setTimeout(() => {
+        const beforeHeight = messageFeed.scrollHeight;
+        const beforeScroll = messageFeed.scrollTop;
+        
+        messageFeed.scrollTop = messageFeed.scrollHeight;
+        console.log('📍 スクロール実行1:', {
+            '実行前高さ': beforeHeight,
+            '実行前位置': beforeScroll,
+            '実行後高さ': messageFeed.scrollHeight,
+            '実行後位置': messageFeed.scrollTop
         });
         
-        // 自動スクロール（最新のメッセージを表示）
-        historyListElement.scrollTop = historyListElement.scrollHeight;
-    }
+        // 強制的に再描画してスクロール確実実行
+        messageFeed.offsetHeight; // トリガー用
+        messageFeed.scrollTop = messageFeed.scrollHeight;
+        console.log('📍 スクロール実行2（再描画後）:', {
+            '高さ': messageFeed.scrollHeight,
+            '位置': messageFeed.scrollTop,
+            '最下部到達': messageFeed.scrollTop >= messageFeed.scrollHeight - messageFeed.clientHeight
+        });
+        
+        // さらに確実にするため再実行
+        requestAnimationFrame(() => {
+            messageFeed.scrollTop = messageFeed.scrollHeight;
+            const isAtBottom = messageFeed.scrollTop >= messageFeed.scrollHeight - messageFeed.clientHeight;
+            console.log('📍 スクロール実行3（requestAnimationFrame）:', {
+                '高さ': messageFeed.scrollHeight,
+                '位置': messageFeed.scrollTop,
+                '最下部到達': isAtBottom,
+                '到達判定差分': messageFeed.scrollHeight - messageFeed.clientHeight - messageFeed.scrollTop
+            });
+            
+            // 💡 デバッグガイダンス
+            if (!isAtBottom) {
+                console.warn('⚠️ スクロールが最下部に到達していません。以下を確認してください:');
+                console.log('🔍 確認項目:', {
+                    '1. CSS overflow設定': 'message-feedにoverflow-y: autoが設定されているか',
+                    '2. 高さ制限': 'max-heightまたはheightが適切に設定されているか', 
+                    '3. flexbox影響': '親要素のflex設定がスクロールに影響していないか',
+                    '4. タイミング': 'DOM更新とスクロール実行のタイミングが適切か'
+                });
+            } else {
+                console.log('✅ スクロールが正常に最下部まで到達しました');
+            }
+        });
+    }, 50);
 }
 
 function canPlayCard(card) {
@@ -854,7 +1184,7 @@ function executeAttack(attacker, target) {
             showDamageAnimation(target, damageInfo, attacker.element);
         }, 150);
         
-        // 相剋効果に応じたメッセージ表示
+        // 相剋効果に応じたメッセージ表示（復元版）
         if (damageInfo.isEffective) {
             showMessage(`🔥 ${damageInfo.message} ${attacker.name}が${target.name}に${damageInfo.damage}ダメージ(+${damageInfo.bonus})！`);
         } else {
@@ -940,17 +1270,17 @@ function enemyAutoAttack(enemyCard) {
         return;
     }
     
-    // 🎬 Stage 1: 敵カードの攻撃待機アニメーション表示
+    // 🎬 Stage 1: 敵カードの攻撃準備アニメーション表示
     console.log('🎭 敵攻撃アニメーション開始:', enemyCard.name);
     gameState.currentEnemyAttacker = enemyCard; // 攻撃中の敵カードを記録
-    showMessage(`🤖 敵の${enemyCard.name}が攻撃を準備しています...`);
+    // メッセージは表示せず、アニメーションのみ実行
     updateDisplay(); // 敵カードにenemy-attackingクラスを追加するため
     
-    // 1000ms後に対象選択とメッセージ更新
+    // 800ms後に対象選択と攻撃実行
     setTimeout(() => {
-        // 🎬 Stage 2: 攻撃対象選択と表示
+        // 🎬 Stage 2: 攻撃対象選択と実行
         enemySelectAndShowTarget(enemyCard, playerCards);
-    }, 1000);
+    }, 800);
 }
 
 // 🎬 Stage 2: 敵の攻撃対象選択と表示
@@ -958,24 +1288,40 @@ function enemySelectAndShowTarget(enemyCard, playerCards) {
     let target;
     const randomValue = Math.random();
     
+    console.log('🧠 敵AI思考プロセス:', {
+        攻撃者: `${enemyCard.name}(攻撃力:${enemyCard.attack}, 属性:${enemyCard.element})`,
+        選択可能対象: playerCards.map(c => `${c.name}(HP:${c.hp}, 属性:${c.element})`),
+        判定用乱数値: randomValue.toFixed(3),
+        戦略閾値: '0.900(最低HP狙い)'
+    });
+    
     // 90%の確率で最もHPが低いカードを狙う
     if (randomValue < 0.9) {
         target = playerCards.reduce((lowest, card) => 
             card.hp < lowest.hp ? card : lowest
         );
         console.log('🤖 AI戦略: 最低HP狙い →', target.name, '(HP:', target.hp, ')');
+        
+        // 相克ダメージ計算を予想表示
+        const damageInfo = calculateElementalDamage(enemyCard, target);
+        console.log('💫 予想ダメージ:', {
+            基本ダメージ: enemyCard.attack,
+            相克補正: damageInfo.isEffective ? `+${damageInfo.bonus}` : 'なし',
+            最終ダメージ: damageInfo.damage,
+            撃破予想: target.hp <= damageInfo.damage ? '✅撃破' : '❌生存'
+        });
     } else {
         target = playerCards[Math.floor(Math.random() * playerCards.length)];
         console.log('🤖 AI戦略: ランダム選択 →', target.name, '(HP:', target.hp, ')');
     }
     
-    showMessage(`🎯 敵の${enemyCard.name}が${target.name}を狙っています...`);
+    // 短時間の対象表示後に攻撃実行
+    showMessage(`🎯 敵の${enemyCard.name}が${target.name}を狙います！`);
     
-    // 500ms後に実際の攻撃実行
+    // 400ms後に実際の攻撃実行  
     setTimeout(() => {
-        // 🎬 Stage 3: 攻撃実行
         executeEnemyAttack(enemyCard, target);
-    }, 500);
+    }, 400);
 }
 
 // 🎬 Stage 3: 敵の攻撃実行
@@ -1006,7 +1352,7 @@ function executeEnemyAttack(enemyCard, target) {
         showDamageAnimation(target, damageInfo, enemyCard.element);
     }, 150);
     
-    // 相剋効果に応じたメッセージ表示
+    // 相剋効果に応じたメッセージ表示（復元版）
     if (damageInfo.isEffective) {
         showMessage(`🔥 ${damageInfo.message} 敵の${enemyCard.name}が${target.name}に${damageInfo.damage}ダメージ(+${damageInfo.bonus})！`);
     } else {
@@ -1132,32 +1478,50 @@ function updateTurnOrderDisplay() {
         turnOrderElement.innerHTML = '';
         const unactedCards = gameState.turnOrder.filter(card => !card.hasActed);
         
+        // 五行属性色彩マッピング（ターン順表示用）
+        const elementTurnColors = {
+            '木': 'border-emerald-400 text-emerald-700 bg-emerald-50',
+            '火': 'border-red-400 text-red-700 bg-red-50',
+            '土': 'border-amber-400 text-amber-700 bg-amber-50',
+            '金': 'border-yellow-400 text-yellow-700 bg-yellow-50',
+            '水': 'border-blue-400 text-blue-700 bg-blue-50'
+        };
+        
         // 全カードを表示
         gameState.turnOrder.forEach((card, globalIndex) => {
             const cardElement = document.createElement('div');
-            cardElement.className = `turn-order-mini ${card.isPlayer ? 'player-mini' : 'enemy-mini'}`;
             
+            // 五行テーマ色彩を適用
+            const elementColor = elementTurnColors[card.element] || 'border-gray-400 text-gray-700 bg-gray-50';
+            
+            // 敵味方の明確な識別デザイン
+            const playerType = card.isPlayer 
+                ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-400' // プレイヤー：青系統で統一
+                : 'ring-2 ring-red-500 bg-red-50 border-red-400';   // 敵：赤系統で統一
+            
+            cardElement.className = `turn-order-mini inline-flex items-center gap-1 px-2 py-1 rounded-lg border-2 ${playerType} transition-all duration-300 text-xs font-semibold shadow-sm mb-1`;
             
             // 行動済みカードはグレーアウトクラスを追加
             if (card.hasActed) {
-                cardElement.classList.add('acted');
+                cardElement.classList.add('opacity-40', 'grayscale');
             }
             
             // 属性アイコン・カード名・速度をコンパクト表示
             const elementIcon = elementIcons[card.element];
             
             cardElement.innerHTML = `
-                ${elementIcon}${card.name.length > 4 ? card.name.substring(0, 4) : card.name}
-                <span class="element-cost-overlay">
-                    <span class="element-icon">⚡</span>
-                    <span class="cost-number">${card.speed}</span>
-                </span>
+                <span class="text-lg">${elementIcon}</span>
+                <span class="font-bold">${card.name.length > 4 ? card.name.substring(0, 4) : card.name}</span>
+                <div class="flex items-center gap-1 ml-1 px-1 py-0.5 bg-white bg-opacity-70 rounded-md">
+                    <span class="text-yellow-600">⚡</span>
+                    <span class="text-xs font-bold">${card.speed}</span>
+                </div>
             `;
             
             // 現在行動中のカードをハイライト（未行動の最初のカード）
             const unactedIndex = unactedCards.findIndex(unactedCard => unactedCard === card);
             if (unactedIndex === 0) {
-                cardElement.classList.add('current-turn');
+                cardElement.classList.add('ring-4', 'ring-yellow-400', 'bg-opacity-80', 'shadow-lg', 'scale-105');
                 // スクロール機能一時停止
                 // setTimeout(() => {
                 //     cardElement.scrollIntoView({
@@ -1280,7 +1644,17 @@ function prepareBattle() {
         ...gameState.enemyField.filter(c => c !== null)
     ];
     
+    console.log('🎯 行動順決定開始:', {
+        プレイヤーカード: gameState.playerField.filter(c => c !== null).map(c => `${c.name}(スピード:${c.speed})`),
+        敵カード: gameState.enemyField.filter(c => c !== null).map(c => `${c.name}(スピード:${c.speed})`),
+        総参加カード数: allCards.length
+    });
+    
     gameState.turnOrder = allCards.sort((a, b) => b.speed - a.speed);
+    
+    console.log('⚡ 行動順確定:', gameState.turnOrder.map((c, i) => 
+        `${i + 1}番目: ${c.name}(スピード:${c.speed}, ${c.isPlayer ? 'プレイヤー' : '敵'})`
+    ));
     
     // 行動フラグをリセット
     gameState.turnOrder.forEach(card => {
@@ -1661,12 +2035,118 @@ function generateStartingHand(deck) {
     return hand;
 }
 
+// 🔍 ゲーム初期化重複検出・防止システム
+let gameInitializationCount = 0;
+let gameInitializationTimestamps = [];
+let isGameInitializing = false; // 🔒 初期化中フラグ
+let lastInitializationTime = 0;
+
 function initializeGame() {
-    // SE初期化（ゲーム開始時のみ）
-    if (!SoundManager.sounds.summon) {
-        SoundManager.init();
+    const currentTime = Date.now();
+    
+    // 🚨 重複初期化防止システム
+    if (isGameInitializing) {
+        console.warn('⚠️ 初期化中につき処理をスキップします:', {
+            '現在実行中': true,
+            '要求発生時刻': new Date().toLocaleTimeString()
+        });
+        return;
     }
     
+    // 短期間内の重複実行防止（1秒以内）
+    if (currentTime - lastInitializationTime < 1000) {
+        console.warn('⚠️ 短期間内重複実行のためスキップします:', {
+            '前回からの経過時間': `${currentTime - lastInitializationTime}ms`,
+            '最小間隔': '1000ms'
+        });
+        return;
+    }
+    
+    // 🔒 初期化開始フラグ設定
+    isGameInitializing = true;
+    lastInitializationTime = currentTime;
+    
+    // 🚨 重複初期化検出ログ
+    gameInitializationCount++;
+    gameInitializationTimestamps.push(currentTime);
+    
+    console.log('🎮 ゲーム初期化実行:', {
+        '実行回数': gameInitializationCount,
+        '現在時刻': new Date().toLocaleTimeString(),
+        '前回からの経過時間': gameInitializationTimestamps.length > 1 ? 
+            `${gameInitializationTimestamps[gameInitializationTimestamps.length - 1] - gameInitializationTimestamps[gameInitializationTimestamps.length - 2]}ms` : '初回',
+        'スタックトレース': new Error().stack.split('\n').slice(1, 4).map(line => line.trim())
+    });
+    
+    // 🚨 短時間での重複実行を警告
+    if (gameInitializationTimestamps.length > 1) {
+        const timeDiff = gameInitializationTimestamps[gameInitializationTimestamps.length - 1] - 
+                        gameInitializationTimestamps[gameInitializationTimestamps.length - 2];
+        if (timeDiff < 1000) { // 1秒以内の重複
+            console.warn('⚠️ ゲーム初期化の短時間重複実行検出!', {
+                '間隔': `${timeDiff}ms`,
+                '重複可能性': 'HIGH'
+            });
+        }
+    }
+    
+    // SE初期化（ゲーム開始時のみ）
+    console.log('🔍 SoundManager初期化確認:', {
+        'summon登録済み': !!SoundManager.sounds.summon,
+        '登録済みSE数': Object.keys(SoundManager.sounds).length,
+        '初期化実行判定': !SoundManager.sounds.summon
+    });
+    
+    if (!SoundManager.sounds.summon) {
+        console.log('🔊 SoundManager初期化を実行します...');
+        SoundManager.init();
+        
+        // 初期化後の確認
+        setTimeout(() => {
+            console.log('🔍 SoundManager初期化完了確認:', {
+                '登録SE一覧': Object.keys(SoundManager.sounds),
+                'button SE確認': !!SoundManager.sounds.button,
+                'sounds object': SoundManager.sounds
+            });
+        }, 100);
+    } else {
+        console.log('✅ SoundManager既に初期化済み');
+    }
+    
+    // 🔄 ゲーム再開: フィールドリセット前の状況記録
+    console.log('🔄 ゲーム再開: フィールドリセット前', {
+        プレイヤーフィールド: gameState.playerField ? gameState.playerField.map((c, i) => c ? `${i}:${c.name}` : `${i}:空`) : '未初期化',
+        敵フィールド: gameState.enemyField ? gameState.enemyField.map((c, i) => c ? `${i}:${c.name}` : `${i}:空`) : '未初期化',
+        プレイヤー撃破ポイント: gameState.defeatedCost || 0,
+        敵撃破ポイント: gameState.enemyDefeatedCost || 0,
+        現在ターン: gameState.turn || 0
+    });
+
+    // 🛠️ フィールドと撃破ポイントの完全リセット
+    gameState.playerField = [null, null, null];  // プレイヤーフィールドクリア
+    gameState.enemyField = [null, null, null];   // 敵フィールドクリア
+    gameState.defeatedCost = 0;                  // プレイヤー撃破ポイントリセット
+    gameState.enemyDefeatedCost = 0;             // 敵撃破ポイントリセット
+    gameState.turn = 1;                          // ターン数リセット
+    gameState.playerPP = 1;                      // プレイヤーPPリセット
+    gameState.enemyPP = 1;                       // 敵PPリセット
+    
+    // 🧹 DOM要素の完全クリア
+    console.log('🧹 DOM要素クリア実行');
+    for (let i = 0; i < 3; i++) {
+        const playerSlot = document.getElementById(`player-slot-${i}`);
+        const enemySlot = document.getElementById(`enemy-slot-${i}`);
+        
+        if (playerSlot) {
+            playerSlot.innerHTML = '<div class="empty-slot text-gray-400 text-sm">空</div>';
+            playerSlot.className = 'card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300';
+        }
+        if (enemySlot) {
+            enemySlot.innerHTML = '<div class="empty-slot text-gray-400 text-sm">空</div>';
+            enemySlot.className = 'card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300';
+        }
+    }
+
     // デッキ作成
     const playerDeckBase = shuffleArray(cardData.map(card => createCard(card, true)));
     const enemyDeckBase = shuffleArray(cardData.map(card => createCard(card, false)));
@@ -1683,6 +2163,17 @@ function initializeGame() {
         !gameState.enemyHand.some(handCard => handCard.id === card.id)
     );
     
+    // ✅ ゲーム再開: フィールドリセット後の確認
+    console.log('✅ ゲーム再開: フィールドリセット後', {
+        プレイヤーフィールド: gameState.playerField.map((c, i) => c ? `${i}:${c.name}` : `${i}:空`),
+        敵フィールド: gameState.enemyField.map((c, i) => c ? `${i}:${c.name}` : `${i}:空`),
+        プレイヤー撃破ポイント: gameState.defeatedCost,
+        敵撃破ポイント: gameState.enemyDefeatedCost,
+        現在ターン: gameState.turn,
+        プレイヤーPP: gameState.playerPP,
+        敵PP: gameState.enemyPP
+    });
+
     console.log('🎮 ゲーム初期化完了:', {
         プレイヤー手札: gameState.playerHand.length + '枚',
         プレイヤーデッキ: gameState.playerDeck.length + '枚',
@@ -1711,69 +2202,72 @@ function initializeGame() {
     showMessage('ゲーム開始！手札からカードを選んでクリックしてください');
     updateDisplay();
     
+    // 🔄 updateDisplay後のフィールド表示確認
+    setTimeout(() => {
+        console.log('🔍 updateDisplay実行後フィールド表示状況:', {
+            'プレイヤースロット0': document.getElementById('player-slot-0')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示',
+            'プレイヤースロット1': document.getElementById('player-slot-1')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示', 
+            'プレイヤースロット2': document.getElementById('player-slot-2')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示',
+            '敵スロット0': document.getElementById('enemy-slot-0')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示',
+            '敵スロット1': document.getElementById('enemy-slot-1')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示',
+            '敵スロット2': document.getElementById('enemy-slot-2')?.innerHTML?.includes('empty-slot') ? '空表示' : 'カード表示'
+        });
+    }, 100);
+    
+    // 🔓 初期化完了フラグリセット
+    isGameInitializing = false;
+    console.log('✅ ゲーム初期化完了 - フラグリセット完了');
+    
     // BGM再生は最初のユーザー操作で開始
 }
 
-// スタート画面のイベントリスナー
-elements.startBtn.addEventListener('click', () => {
-    // SE再生: ボタン
-    SoundManager.play('button');
-    
-    // BGM開始（初回ユーザー操作）
-    SoundManager.startBGM();
-    
-    // スタート画面を非表示にしてゲーム開始
-    elements.startScreen.style.display = 'none';
-    elements.gameContainer.style.display = 'block';
-    elements.controlPanel.style.display = 'flex';
-    
-    // ゲーム初期化
-    initializeGame();
-});
+// スタート画面のイベントリスナーは統合初期化システムに移動済み ✅
 
-// 音響コントロールのイベントリスナー
-elements.audioToggle.addEventListener('click', () => {
-    const panel = elements.audioPanel;
-    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
-});
+// 音響コントロールのイベントリスナー（重複削除済み - 強化版を下部で使用）
 
-elements.audioClose.addEventListener('click', () => {
-    elements.audioPanel.style.display = 'none';
-});
+// audioClose要素は存在しないため削除済み（Alpine.jsで処理）
 
-elements.bgmToggle.addEventListener('click', () => {
-    const enabled = SoundManager.toggleBGM();
-    elements.bgmToggle.textContent = enabled ? 'ON' : 'OFF';
-    elements.bgmToggle.className = enabled ? 'toggle-btn' : 'toggle-btn off';
-});
+// BGM・SE切り替えは下部で詳細実装済み
 
-elements.seToggle.addEventListener('click', () => {
-    const enabled = SoundManager.toggleSE();
-    elements.seToggle.textContent = enabled ? 'ON' : 'OFF';
-    elements.seToggle.className = enabled ? 'toggle-btn' : 'toggle-btn off';
-});
+// bgmVolume要素は存在しないため削除済み（Alpine.jsで処理）
 
-elements.bgmVolume.addEventListener('input', (e) => {
-    SoundManager.setBGMVolume(e.target.value);
-});
+// seVolume要素は存在しないため削除済み（Alpine.jsで処理）
 
-elements.seVolume.addEventListener('input', (e) => {
-    SoundManager.setSEVolume(e.target.value);
-});
+// 戦闘フェーズ移行ボタンのイベントリスナー
+if (elements.summonToBattleBtn) {
+    elements.summonToBattleBtn.addEventListener('click', () => {
+        console.log('⚔️ 戦闘フェーズへボタンクリック');
+        SoundManager.play('button');
+        if (gameState.phase === 'summon') {
+            nextPhase();
+        }
+    });
+} else {
+    console.error('❌ summonToBattleBtn要素が見つかりません');
+}
 
 // ゲームイベントリスナー
-elements.endTurnBtn.addEventListener('click', () => {
-    // SE再生: ボタン
-    SoundManager.play('button');
-    
-    if (gameState.phase === 'summon') {
+if (elements.endTurnBtn) {
+    console.log('✅ endTurnBtn要素確認: 正常に取得済み');
+    elements.endTurnBtn.addEventListener('click', () => {
+        console.log('🔄 ターン終了ボタンクリック');
+        SoundManager.play('button');
         nextPhase();
-    } else if (gameState.phase === 'battle') {
-        nextPhase();
-    }
-});
+    });
+} else {
+    console.error('❌ endTurnBtn要素が見つかりません');
+}
 
-elements.skipActionBtn.addEventListener('click', () => {
+if (elements.skipActionBtn) {
+    elements.skipActionBtn.addEventListener('click', () => {
+    console.log('🎮 skipActionBtn クリックイベント発火:', {
+        'ボタンテキスト': elements.skipActionBtn.textContent,
+        'ゲームフェーズ': gameState.phase,
+        'ボタン表示状態': elements.skipActionBtn.style.display,
+        'ボタン無効状態': elements.skipActionBtn.disabled,
+        'クリック発生時刻': new Date().toLocaleTimeString()
+    });
+    
     // SE再生: ボタン
     SoundManager.play('button');
     
@@ -1800,109 +2294,146 @@ elements.skipActionBtn.addEventListener('click', () => {
             }, 1000);
         }
     }
-});
+    });
+} else {
+    console.error('❌ skipActionBtn要素が見つかりません');
+}
 
-elements.restartBtn.addEventListener('click', () => {
-    // SE再生: ボタン
-    SoundManager.play('button');
-    
-    // ゲーム状態をリセット
-    gameState = {
-        phase: 'draw',
-        turn: 1,
-        playerPP: 1,
-        maxPP: 1,
-        enemyPP: 1,
-        enemyMaxPP: 1,
-        playerHand: [],
-        playerDeck: [],
-        enemyHand: [],
-        enemyDeck: [],
-        playerField: [null, null, null],
-        enemyField: [null, null, null],
-        defeatedCost: 0,
-        enemyDefeatedCost: 0,
-        attackMode: false,
-        currentAttacker: null,
-        battleQueue: [],
-        turnOrder: [],
-        messageHistory: []
-    };
-    
-    // ボタンの初期化
-    elements.endTurnBtn.style.display = 'inline-block';
-    elements.skipActionBtn.style.display = 'none';
-    
-    // ゲーム再開
-    initializeGame();
-});
+// ゲーム再開ボタンのイベントリスナー
+if (elements.restartGameBtn) {
+    elements.restartGameBtn.addEventListener('click', () => {
+        console.log('🔄 ゲーム再開ボタンクリック: initializeGame()を実行');
+        SoundManager.play('button');
+        initializeGame();
+        console.log('✅ ゲーム再開処理完了');
+    });
+} else {
+    console.error('❌ restartGameBtn要素が見つかりません');
+}
 
-// ヘルプイベントリスナー
-document.getElementById('help-toggle').addEventListener('click', () => {
-    const helpModal = document.getElementById('help-modal');
-    // SE再生: ボタン
-    SoundManager.play('button');
-    helpModal.style.display = 'flex';
-});
+// ヘルプイベントリスナーは統合初期化システムに移動済み ✅
 
-document.getElementById('help-close').addEventListener('click', () => {
-    const helpModal = document.getElementById('help-modal');
-    // SE再生: ボタン
-    SoundManager.play('button');
-    helpModal.style.display = 'none';
-});
+// 🎭 勝敗結果モーダルイベントリスナーは統合初期化システムに移動済み ✅
 
-// ヘルプモーダルの背景クリックで閉じる
-document.getElementById('help-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'help-modal') {
-        const helpModal = document.getElementById('help-modal');
-        helpModal.style.display = 'none';
+// 右下ゲーム再開ボタンは削除済み（既存endTurnBtnシステムを活用）
+
+// ハンバーガーメニューイベントリスナーは統合初期化システムに移動済み ✅
+
+// メニュー外クリックで閉じる
+document.addEventListener('click', (e) => {
+    const menu = elements.hamburgerMenu;
+    const btn = elements.hamburgerBtn;
+    if (!menu.contains(e.target) && !btn.contains(e.target)) {
+        menu.style.display = 'none';
     }
 });
 
-// 🎭 勝敗結果モーダルイベントリスナー
-document.getElementById('result-restart-btn').addEventListener('click', () => {
-    console.log('🔄 結果モーダルからゲーム再開');
-    SoundManager.play('button');
+// 音響パネル制御（強化版）
+if (elements.audioToggle && elements.audioPanel) {
+    console.log('✅ 音響パネル要素確認:', {
+        audioToggle: !!elements.audioToggle,
+        audioPanel: !!elements.audioPanel,
+        hamburgerMenu: !!elements.hamburgerMenu
+    });
     
-    // モーダルを閉じる
-    document.getElementById('game-result-modal').style.display = 'none';
-    
-    // ゲーム状態をリセット
-    gameState = {
-        phase: 'draw',
-        turn: 1,
-        playerPP: 1,
-        maxPP: 1,
-        enemyPP: 1,
-        gameOver: false,
-        enemyMaxPP: 1,
-        playerHand: [],
-        playerDeck: [],
-        enemyHand: [],
-        enemyDeck: [],
-        playerField: [null, null, null],
-        enemyField: [null, null, null],
-        defeatedCost: 0,
-        enemyDefeatedCost: 0,
-        attackMode: false,
-        currentAttacker: null,
-        justStartedAttack: false,
-        currentEnemyAttacker: null,
-        simultaneousCombatCards: [],
-        battleQueue: [],
-        turnOrder: [],
-        messageHistory: []
-    };
-    
-    // ゲーム再開
-    initializeGame();
+    elements.audioToggle.addEventListener('click', (e) => {
+        console.log('🎵 音響パネルボタンクリック開始');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        SoundManager.play('button');
+        
+        const panel = elements.audioPanel;
+        const currentDisplay = window.getComputedStyle(panel).display;
+        console.log('🎵 現在の音響パネル表示状態:', currentDisplay);
+        
+        if (currentDisplay === 'none') {
+            panel.style.display = 'block';
+            panel.style.visibility = 'visible';
+            panel.style.opacity = '1';
+            console.log('📂 音響パネル表示');
+        } else {
+            panel.style.display = 'none';
+            console.log('📁 音響パネル非表示');
+        }
+        
+        // ハンバーガーメニューを閉じる
+        if (elements.hamburgerMenu) {
+            elements.hamburgerMenu.style.display = 'none';
+            console.log('🍔 ハンバーガーメニュー閉じる');
+        }
+    });
+} else {
+    console.error('❌ 音響パネル要素が見つかりません:', {
+        audioToggle: !!elements.audioToggle,
+        audioPanel: !!elements.audioPanel
+    });
+}
+
+// 音響パネル閉じるボタンはAlpine.jsで処理（HTML側で @click 実装済み）
+
+// BGM切り替えはAlpine.jsで処理（HTML側で @click 実装済み）
+
+// SE切り替えはAlpine.jsで処理（HTML側で @click 実装済み）
+
+// BGM音量調整はAlpine.jsで処理（HTML側で @input 実装済み）
+
+// SE音量調整はAlpine.jsで処理（HTML側で @input 実装済み）
+
+// 降参ボタン（メニュー内）のイベントリスナー
+if (elements.surrenderMenuBtn && elements.surrenderModal) {
+    elements.surrenderMenuBtn.addEventListener('click', () => {
+        SoundManager.play('button');
+        console.log('⚠️ 降参ボタンクリック');
+        elements.hamburgerMenu.style.display = 'none';
+        elements.surrenderModal.style.display = 'flex';
+    });
+}
+
+// 降参確認ボタンのイベントリスナー
+if (elements.surrenderConfirmBtn) {
+    elements.surrenderConfirmBtn.addEventListener('click', () => {
+        SoundManager.play('button');
+        console.log('⚠️ 降参確定');
+        elements.surrenderModal.style.display = 'none';
+        
+        // 降参処理：敗北として処理
+        gameState.gameOver = true;
+        showGameResultModal('defeat', '降参しました');
+        
+        // 少し待ってから自動でゲームを再開
+        setTimeout(() => {
+            console.log('🔄 降参後の自動ゲーム再開');
+            initializeGame();
+        }, 2000);
+    });
+}
+
+// 降参キャンセルボタンのイベントリスナー
+if (elements.surrenderCancelBtn) {
+    elements.surrenderCancelBtn.addEventListener('click', () => {
+        SoundManager.play('button');
+        console.log('❌ 降参キャンセル');
+        elements.surrenderModal.style.display = 'none';
+    });
+}
+
+// モーダル背景クリックで閉じる
+elements.surrenderModal.addEventListener('click', (e) => {
+    if (e.target === elements.surrenderModal) {
+        SoundManager.play('button');
+        elements.surrenderModal.style.display = 'none';
+    }
 });
 
 document.getElementById('result-close-btn').addEventListener('click', () => {
     console.log('❌ 結果モーダルを閉じる');
     SoundManager.play('button');
     document.getElementById('game-result-modal').style.display = 'none';
+    
+    // 統一ボタン管理システムに委任（直接操作を廃止）
+    gameState.gameOver = true; // ゲーム終了フラグを設定
+    updateButtonStates(); // 統一システムでボタン状態を更新
 });
 
 // 結果モーダルの背景クリックで閉じる
@@ -1950,10 +2481,235 @@ function initializeHelpTabs() {
     console.log('✅ ヘルプタブシステム初期化完了');
 }
 
-// ゲーム開始
-initializeGame();
+// 🚀 統合初期化用ヘルパー関数群
 
-// ヘルプタブシステム初期化（DOM読み込み後）
-document.addEventListener('DOMContentLoaded', () => {
-    initializeHelpTabs();
+// SoundManager非同期初期化ラッパー
+async function initializeSoundManager() {
+    console.log('🔊 SoundManager初期化ラッパー開始');
+    
+    // 既に初期化済みかチェック
+    if (SoundManager.sounds.button) {
+        console.log('✅ SoundManager既に初期化済み');
+        return true;
+    }
+    
+    // 非同期初期化実行
+    const result = await SoundManager.initAsync();
+    return result;
+}
+
+// イベントリスナー統合登録
+function initializeEventListeners() {
+    console.log('🎯 イベントリスナー統合登録開始');
+    
+    // スタートボタンイベント（移動してくる）
+    if (elements.startBtn) {
+        elements.startBtn.addEventListener('click', () => {
+            console.log('🎮 ゲーム開始ボタンクリック');
+            
+            // SE再生: ボタン
+            SoundManager.play('button');
+            
+            // BGM開始（初回ユーザー操作）
+            SoundManager.startBGM();
+            
+            // スタート画面を非表示にしてゲーム開始
+            elements.startScreen.style.display = 'none';
+            document.getElementById('game-viewport').style.display = 'block';
+            
+            // ゲーム初期化
+            initializeGame();
+        });
+        console.log('✅ スタートボタンイベント登録完了');
+    }
+    
+    // 結果モーダル再開ボタン（移動してくる）
+    const resultRestartBtn = document.getElementById('result-restart-btn');
+    if (resultRestartBtn) {
+        resultRestartBtn.addEventListener('click', (e) => {
+            console.log('🔄 結果モーダルからゲーム再開クリック');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            SoundManager.play('button');
+            
+            // モーダルを閉じる
+            const modal = document.getElementById('game-result-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            // 🔄 フィールドリセット前の状況確認
+            console.log('🔍 ゲーム再開前フィールド状況:', {
+                'プレイヤーフィールド': gameState.playerField?.map((c, i) => c ? `スロット${i}:${c.name}` : `スロット${i}:空`),
+                '敵フィールド': gameState.enemyField?.map((c, i) => c ? `スロット${i}:${c.name}` : `スロット${i}:空`),
+                'ゲーム終了状態': gameState.gameOver || false
+            });
+
+            // ゲーム状態をリセット
+            gameState = {
+                phase: 'draw',
+                turn: 1,
+                playerPP: 1,
+                maxPP: 1,
+                enemyPP: 1,
+                gameOver: false,
+                enemyMaxPP: 1,
+                playerHand: [],
+                playerDeck: [],
+                enemyHand: [],
+                enemyDeck: [],
+                playerField: [null, null, null],
+                enemyField: [null, null, null],
+                defeatedCost: 0,
+                enemyDefeatedCost: 0,
+                attackMode: false,
+                currentAttacker: null,
+                justStartedAttack: false,
+                currentEnemyAttacker: null,
+                simultaneousCombatCards: [],
+                battleQueue: [],
+                turnOrder: [],
+                messageHistory: []
+            };
+
+            // 🔄 フィールドリセット後の確認
+            console.log('✅ ゲーム状態リセット完了:', {
+                'プレイヤーフィールド': gameState.playerField,
+                '敵フィールド': gameState.enemyField,
+                'フェーズ': gameState.phase,
+                'ゲーム終了フラグ': gameState.gameOver
+            });
+            
+            // ボタンを元の状態に戻す
+            if (elements.endTurnBtn) {
+                elements.endTurnBtn.textContent = 'ターン終了';
+                elements.endTurnBtn.className = 'action-button primary';
+            }
+            
+            // ゲーム再開
+            initializeGame();
+        });
+        console.log('✅ 結果モーダル再開ボタンイベント登録完了');
+    }
+    
+    // ハンバーガーメニューイベント
+    if (elements.hamburgerBtn && elements.hamburgerMenu) {
+        elements.hamburgerBtn.addEventListener('click', () => {
+            SoundManager.play('button');
+            console.log('🍔 ハンバーガーメニュークリック');
+            const menu = elements.hamburgerMenu;
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        });
+        console.log('✅ ハンバーガーメニューイベント登録完了');
+    }
+    
+    // ヘルプ関連イベント
+    const helpToggle = document.getElementById('help-toggle');
+    const helpModal = document.getElementById('help-modal');
+    const helpClose = document.getElementById('help-close');
+    
+    if (helpToggle && helpModal) {
+        helpToggle.addEventListener('click', () => {
+            SoundManager.play('button');
+            helpModal.style.display = 'flex';
+            // ハンバーガーメニューを閉じる
+            if (elements.hamburgerMenu) {
+                elements.hamburgerMenu.style.display = 'none';
+            }
+        });
+        console.log('✅ ヘルプトグルイベント登録完了');
+    }
+    
+    if (helpClose && helpModal) {
+        helpClose.addEventListener('click', () => {
+            SoundManager.play('button');
+            helpModal.style.display = 'none';
+        });
+        console.log('✅ ヘルプクローズイベント登録完了');
+    }
+    
+    if (helpModal) {
+        helpModal.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'help-modal') {
+                helpModal.style.display = 'none';
+            }
+        });
+        console.log('✅ ヘルプモーダル背景クリックイベント登録完了');
+    }
+    
+    // 重複する音響トグルイベントを削除済み（elements.audioToggleで処理）
+    
+    // 降参関連イベント
+    const surrenderMenuBtn = document.getElementById('surrender-menu-btn');
+    const surrenderModal = document.getElementById('surrender-modal');
+    const surrenderConfirmBtn = document.getElementById('surrender-confirm-btn');
+    const surrenderCancelBtn = document.getElementById('surrender-cancel-btn');
+    
+    if (surrenderMenuBtn && surrenderModal) {
+        surrenderMenuBtn.addEventListener('click', () => {
+            SoundManager.play('button');
+            surrenderModal.style.display = 'flex';
+            // ハンバーガーメニューを閉じる
+            if (elements.hamburgerMenu) {
+                elements.hamburgerMenu.style.display = 'none';
+            }
+        });
+        console.log('✅ 降参メニューイベント登録完了');
+    }
+    
+    if (surrenderConfirmBtn) {
+        surrenderConfirmBtn.addEventListener('click', () => {
+            SoundManager.play('button');
+            showGameResultModal('defeat', '降参しました');
+            if (surrenderModal) {
+                surrenderModal.style.display = 'none';
+            }
+        });
+        console.log('✅ 降参確認イベント登録完了');
+    }
+    
+    if (surrenderCancelBtn && surrenderModal) {
+        surrenderCancelBtn.addEventListener('click', () => {
+            SoundManager.play('button');
+            surrenderModal.style.display = 'none';
+        });
+        console.log('✅ 降参キャンセルイベント登録完了');
+    }
+    
+    console.log('🎯 イベントリスナー統合登録完了');
+}
+
+// ゲーム開始は統合初期化システムで管理 ✅
+
+// 🚀 統合初期化システム（DOM読み込み後）
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 DOMContentLoaded: 統合初期化開始');
+    
+    try {
+        // Phase 1: SoundManager初期化 (async/await で確実な完了待機)
+        console.log('🔊 SoundManager初期化開始...');
+        await initializeSoundManager();
+        
+        // Phase 2: Alpine.js同期とグローバル参照確保
+        console.log('🎵 Alpine.js-SoundManager同期確保...');
+        window.SoundManager = SoundManager; // グローバル参照確保
+        
+        // Phase 3: イベントリスナー一括登録
+        console.log('🎯 イベントリスナー統合登録...');
+        initializeEventListeners();
+        
+        // Phase 4: ヘルプタブ初期化
+        console.log('❓ ヘルプタブシステム初期化...');
+        initializeHelpTabs();
+        
+        console.log('✅ DOMContentLoaded: 統合初期化完了');
+        
+    } catch (error) {
+        console.error('❌ 統合初期化エラー:', error);
+    }
 });

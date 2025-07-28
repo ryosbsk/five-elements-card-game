@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Chrome (Game Debug)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug",
+      "console": "integratedTerminal",
+      "breakOnLoadStrategy": "regex",
+      "breakOnLoad": false,
+      "runtimeArgs": [
+        "--disable-web-security",
+        "--disable-features=VizDisplayCompositor",
+        "--allow-running-insecure-content"
+      ]
+    },
+    {
+      "name": "Launch Game (Live Server)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://127.0.0.1:5500/index.html",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true,
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🌸 AYAによる検証プロセス開始：'"
+          },
+          {
+            "type": "command", 
+            "command": "echo '  💭 アイデア出し・プラン策定の必要性を確認'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  ❓ 逆質問・疑問点の洗い出し'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  🔍 技術的妥当性・ユーザビリティの検証'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  ⚖️ 協働での判断・意思決定'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  ⚡ 効率化チェック: 繰り返し作業・改善機会の自動検出'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🚨 実装前チェック: 事前協働・アイデア出し・妥当性検証は完了していますか？'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit.*\\.(css|html)|MultiEdit.*style|Write.*style",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🎨 ux-optimizer-aya (Purple) 推奨: /ux-review でUI/UX改善分析を実行'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit.*\\.(js|ts)|Write.*script|MultiEdit.*script",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🔍 tech-aya-reviewer (Blue) 推奨: /code-review でコード品質分析を実行'"
+          },
+          {
+            "type": "command",
+            "command": "echo '🎮 wuxing-game-analyzer (Green) 推奨: ゲームロジック変更時は /game-analysis を実行'"
+          },
+          {
+            "type": "command",
+            "command": "echo '📝 TypeScript提案: 新機能や複雑なロジックはTypeScriptで実装すると効率アップ✨'"
+          }
+        ]
+      },
+      {
+        "matcher": "Write.*\\.js$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '💡 効率化提案: 新ファイル作成時は .ts 拡張子も検討してみませんか？型安全性が向上します🌸'"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '⚡ efficiency-optimizer (Orange) 推奨: 繰り返し作業は /workflow-optimize で効率化'"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🔍 公式Sub-Agents分析推奨：'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  🎨 UI/UX: /ux-review → ux-optimizer-aya (Purple)'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  🔧 コード: /code-review → tech-aya-reviewer (Blue)'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  🎮 ゲーム: /game-analysis → wuxing-game-analyzer (Green)'"
+          },
+          {
+            "type": "command",
+            "command": "echo '  ⚡ 効率化: /workflow-optimize → efficiency-optimizer (Orange)'"
+          }
+        ]
+      }
+    ]
+  }
+}

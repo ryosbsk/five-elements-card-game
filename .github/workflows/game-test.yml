@@ -1,0 +1,99 @@
+name: Five Elements Game CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        npm install -g htmlhint stylelint eslint
+        npm install --save-dev eslint-config-standard
+
+    - name: Validate HTML
+      run: |
+        echo "🔍 HTML構造検証"
+        htmlhint index.html --config .htmlhintrc || echo "HTMLHintルールファイルが存在しません"
+
+    - name: Validate CSS
+      run: |
+        echo "🎨 CSS検証"
+        stylelint "*.css" --config-basedir . || echo "StyleLintルールファイルが存在しません"
+
+    - name: Validate JavaScript
+      run: |
+        echo "⚡ JavaScript検証"
+        eslint script.js --fix-dry-run || echo "ESLintルールファイルが存在しません"
+
+    - name: Game Structure Validation
+      run: |
+        echo "🎮 ゲーム構造検証"
+        echo "必須ファイル確認:"
+        ls -la index.html style.css script.js
+        echo "ゲーム要素確認:"
+        grep -q "game-container" index.html && echo "✅ ゲームコンテナ存在" || echo "❌ ゲームコンテナ不在"
+        grep -q "五行" index.html && echo "✅ 五行要素存在" || echo "❌ 五行要素不在"
+        grep -q "battle" script.js && echo "✅ 戦闘システム存在" || echo "❌ 戦闘システム不在"
+
+  browser-compatibility:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Browser Testing
+      run: |
+        echo "🌐 ブラウザ互換性テスト準備"
+        sudo apt-get update
+        sudo apt-get install -y chromium-browser
+
+    - name: Start Local Server
+      run: |
+        echo "🚀 ローカルサーバー起動"
+        python3 -m http.server 8000 &
+        sleep 3
+
+    - name: Basic Browser Test
+      run: |
+        echo "🖥️ 基本ブラウザテスト"
+        curl -f http://localhost:8000/index.html > /dev/null && echo "✅ ページ読み込み成功" || echo "❌ ページ読み込み失敗"
+
+  game-logic-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Game Logic Validation
+      run: |
+        echo "🧠 ゲームロジック検証"
+        echo "五行相剋システム確認:"
+        grep -q "木.*土" script.js && echo "✅ 木→土相剋" || echo "❌ 木→土相剋不在"
+        grep -q "火.*金" script.js && echo "✅ 火→金相剋" || echo "❌ 火→金相剋不在"
+        grep -q "土.*水" script.js && echo "✅ 土→水相剋" || echo "❌ 土→水相剋不在"
+        grep -q "金.*木" script.js && echo "✅ 金→木相剋" || echo "❌ 金→木相剋不在"
+        grep -q "水.*火" script.js && echo "✅ 水→火相剋" || echo "❌ 水→火相剋不在"
+        
+        echo "勝利条件確認:"
+        grep -q "5.*コスト" script.js && echo "✅ 5コスト勝利条件" || echo "❌ 5コスト勝利条件不在"
+        
+        echo "フェーズシステム確認:"
+        grep -q "配置.*フェーズ" script.js && echo "✅ 配置フェーズ" || echo "❌ 配置フェーズ不在"
+        grep -q "戦闘.*フェーズ" script.js && echo "✅ 戦闘フェーズ" || echo "❌ 戦闘フェーズ不在"

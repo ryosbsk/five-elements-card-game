@@ -1,0 +1,43 @@
+{
+  "editor.fontSize": 14,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
+  "html.format.indentInnerHtml": true,
+  "html.format.wrapLineLength": 100,
+  "css.format.spaceAroundSelectorSeparator": true,
+  "javascript.format.semicolons": "always",
+  "javascript.preferences.quoteStyle": "single",
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact"
+  },
+  "files.associations": {
+    "*.html": "html",
+    "*.css": "css",
+    "*.js": "javascript"
+  },
+  "liveServer.settings.port": 3000,
+  "liveServer.settings.CustomBrowser": "chrome",
+  "liveServer.settings.donotShowInfoMsg": true,
+  "liveServer.settings.ignoreFiles": [
+    ".vscode/**",
+    "**/*.scss",
+    "**/*.sass",
+    "**/*.ts"
+  ],
+  "html.validate.scripts": true,
+  "html.validate.styles": true,
+  "css.validate": true,
+  "javascript.validate.enable": true,
+  "tailwindCSS.includeLanguages": {
+    "html": "html",
+    "javascript": "javascript"
+  },
+  "tailwindCSS.experimental.classRegex": [
+    ["classList.add\\(([^)]*)\\)", "([\"'`][^\"'`]*.*[\"'`])"]
+  ]
+}

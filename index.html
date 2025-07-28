@@ -9,41 +9,52 @@
     <!-- Tailwind CSS CDN (実験用) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Tailwind動作確認: ゲーム開始ボタンにhover:scale-105効果を追加済み -->
+    <!-- Alpine.js CDN (リアクティブUI) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
 </head>
 <body>
-    <!-- ゲーム開始画面 -->
-    <div id="start-screen" class="start-screen">
-        <div class="start-content">
-            <h1>ELEMENTAL</h1>
-            <p>五行の力を使って戦略的バトル！</p>
-            <div class="game-description">
-                <div class="rule-item">⚔️ 3vs3のカードバトル</div>
-                <div class="rule-item">💎 PPでカードを召喚</div>
-                <div class="rule-item">🏆 敵カード5コスト撃破で勝利</div>
+    <!-- ゲーム開始画面（Tailwind移行完了） -->
+    <div id="start-screen" class="fixed inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center z-[2000]">
+        <div class="text-center bg-white bg-opacity-95 p-6 rounded-2xl shadow-2xl max-w-sm w-[90%]">
+            <h1 class="text-3xl mb-4 text-blue-500 font-bold drop-shadow-sm">ELEMENTAL</h1>
+            <p class="text-base text-gray-600 mb-6">五行の力を使って戦略的バトル！</p>
+            <div class="my-5 text-left">
+                <div class="py-2 px-3 bg-blue-50 border-l-4 border-blue-500 mb-2 rounded text-sm">⚔️ 3vs3のカードバトル</div>
+                <div class="py-2 px-3 bg-blue-50 border-l-4 border-blue-500 mb-2 rounded text-sm">💎 PPでカードを召喚</div>
+                <div class="py-2 px-3 bg-blue-50 border-l-4 border-blue-500 mb-2 rounded text-sm">🏆 敵カード5コスト撃破で勝利</div>
             </div>
-            <button id="start-game-btn" class="start-button hover:scale-105 transition-transform duration-200">
+            <button id="start-game-btn" class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 text-lg">
                 ゲーム開始
             </button>
         </div>
     </div>
 
-    <div class="game-container" id="game-container" style="display: none;">
-        <!-- 統合戦闘フィールド -->
+    <!-- 16:9ゲームビューポート -->
+    <div class="game-viewport" id="game-viewport" style="display: none;">
+        <div class="game-container" id="game-container">
+        <!-- 行動順エリア（完全統合版） -->
+        <div class="turn-order-area turn-order-list p-1 rounded-lg flex flex-col gap-1 items-center text-xs" id="turn-order">
+            <!-- 行動順がここに表示される -->
+        </div>
+
+        <!-- 統合戦闘フィールド（透明背景） -->
         <div class="battlefield-area">
+            <!-- 敵情報バー（フィールド上端） -->
+            <div class="enemy-info-compact bg-gradient-to-r from-red-100 to-orange-100 border-2 border-red-300 rounded-lg px-3 py-2 shadow-md">
+                <span class="font-bold text-red-700">敵</span> | <span id="enemy-pp" class="text-purple-700 font-semibold">💎1/1</span> | <span id="enemy-victory-counter" class="text-yellow-700 font-semibold">🏆0/5</span> | <span id="enemy-hand-count" class="text-blue-700 font-semibold">💳3枚</span>
+            </div>
+            
             <!-- 敵エリア -->
             <div class="enemy-area">
-                <div class="enemy-info-compact">
-                    敵 | <span id="enemy-pp">💎1/1</span> | <span id="enemy-victory-counter">🏆0/5</span> | <span id="enemy-hand-count">💳3枚</span>
-                </div>
                 <div class="battlefield" id="enemy-battlefield">
-                    <div class="card-slot" id="enemy-slot-0">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="enemy-slot-0">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
-                    <div class="card-slot" id="enemy-slot-1">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="enemy-slot-1">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
-                    <div class="card-slot" id="enemy-slot-2">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="enemy-slot-2">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
                 </div>
             </div>
@@ -51,83 +62,175 @@
             <!-- プレイヤーエリア -->
             <div class="player-area">
                 <div class="battlefield" id="player-battlefield">
-                    <div class="card-slot" id="player-slot-0">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="player-slot-0">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
-                    <div class="card-slot" id="player-slot-1">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="player-slot-1">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
-                    <div class="card-slot" id="player-slot-2">
-                        <div class="empty-slot">空</div>
+                    <div class="card-slot border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 bg-opacity-50 flex items-center justify-center hover:bg-gray-100 hover:border-gray-400 transition-all duration-300" id="player-slot-2">
+                        <div class="empty-slot text-gray-400 text-sm">空</div>
                     </div>
                 </div>
-                <div class="player-info-compact">
-                    自分 | <span id="player-pp-compact">💎1/1</span> | <span id="player-victory-compact">🏆0/5</span> | <span id="player-turn-compact">🔄ターン1</span>
-                </div>
+            </div>
+            
+            <!-- プレイヤー情報バー（フィールド下端） -->
+            <div class="player-info-compact bg-gradient-to-r from-blue-100 to-cyan-100 border-2 border-blue-300 rounded-lg px-3 py-2 shadow-md">
+                <span class="font-bold text-blue-700">自分</span> | <span id="player-pp-compact" class="text-purple-700 font-semibold">💎1/1</span> | <span id="player-victory-compact" class="text-yellow-700 font-semibold">🏆0/5</span> | <span id="player-turn-compact" class="text-green-700 font-semibold">🔄ターン1</span>
             </div>
         </div>
 
-        <!-- 行動順表示 -->
-        <div class="turn-order-area">
-            <div class="turn-order-card">
-                <div class="info-title">行動順</div>
-                <div id="turn-order" class="turn-order-list">
-                    <!-- 行動順がここに表示される -->
-                </div>
-            </div>
+        <!-- メッセージエリア（完全統合版） -->
+        <div class="message-area message-feed p-1 rounded-lg flex flex-col gap-0.5 flex-1 overflow-y-auto border border-gray-200 border-opacity-40 backdrop-blur-sm" id="message-feed">
+            <!-- メッセージがここに追加される -->
         </div>
 
-        <!-- 手札エリア（横向きレイアウト用） -->
+        <!-- 空きエリア（将来的な拡張用） -->
+        <div class="restart-button-area">
+        </div>
+
+        <!-- 手札エリア -->
         <div class="hand-area">
             <div class="hand-cards" id="player-hand">
                 <!-- 手札のカードがここに表示される -->
             </div>
         </div>
 
-        <!-- コントロールエリア（横向きレイアウト用） -->
-        <div class="controls-area">
-            <button id="end-turn-btn" class="action-button primary">ターン終了</button>
-            <button id="skip-action-btn" class="action-button secondary">行動スキップ</button>
-            <button id="restart-btn" class="action-button restart">ゲーム再開</button>
-            
-            <!-- メッセージ（簡略版） -->
-            <div id="game-message" class="current-message-compact">
-                ゲーム開始
-            </div>
+        <!-- 戦闘ボタンエリア（手札の右側） -->
+        <div class="battle-button-area p-2 rounded-lg flex flex-col justify-center items-center gap-2">
+            <button id="summon-to-battle-btn" class="battle-btn-circle bg-green-500 hover:bg-green-600 text-white font-bold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200" style="display: none;">
+                <span>戦闘</span>
+                <span>フェーズへ</span>
+            </button>
+            <button id="end-turn-btn" class="battle-btn-circle bg-green-500 hover:bg-green-600 text-white font-bold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200" style="display: none;">
+                <span>ターン</span>
+                <span>終了</span>
+            </button>
+            <button id="restart-game-btn" class="battle-btn-circle bg-purple-500 hover:bg-purple-600 text-white font-bold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200" style="display: none;">
+                <span>ゲーム</span>
+                <span>再開</span>
+            </button>
+            <button id="skip-action-btn" class="battle-btn-circle bg-orange-500 hover:bg-orange-600 text-white font-bold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200" style="display: none;">
+                <span>行動</span>
+                <span>スキップ</span>
+            </button>
+            <button id="waiting-btn" class="battle-btn-circle bg-gray-400 text-white font-bold shadow-md transition-all duration-200" disabled style="display: none;">
+                <span>🎯</span>
+                <span>行動中</span>
+            </button>
         </div>
 
         <!-- ゲーム背景（攻撃キャンセル用） -->
         <div id="game-background" class="game-background"></div>
-    </div>
+        
+        <!-- ハンバーガーメニュー（左下固定） -->
+        <div class="hamburger-menu-container">
+            <button id="hamburger-btn" class="w-10 h-10 bg-white bg-opacity-95 border-2 border-gray-300 rounded-lg shadow-lg hover:bg-gray-50 hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 text-lg flex items-center justify-center" title="メニュー">☰</button>
+            <div id="hamburger-menu" class="hamburger-menu" style="display: none;">
+                <button id="help-toggle" class="w-full text-left px-3 py-2 text-sm bg-transparent hover:bg-gray-100 rounded transition-all duration-200 flex items-center gap-2" title="ヘルプ">❓ ヘルプ</button>
+                <button id="audio-toggle" class="w-full text-left px-3 py-2 text-sm bg-transparent hover:bg-gray-100 rounded transition-all duration-200 flex items-center gap-2" title="音響設定">🔊 音量</button>
+                <hr class="border-gray-200 my-1">
+                <button id="surrender-menu-btn" class="w-full text-left px-3 py-2 text-sm bg-transparent hover:bg-red-50 text-red-600 rounded transition-all duration-200 flex items-center gap-2" title="降参">⚠️ 降参</button>
+            </div>
+        </div>
 
-    <!-- マリガンシステムは自動化により削除済み -->
-
-    <!-- 統合コントロールパネル（右下固定） -->
-    <div class="control-panel" id="control-panel" style="display: none;">
-        <button id="help-toggle" class="control-btn" title="相剋表を表示">
-            ❓
-        </button>
-        <button id="audio-toggle" class="control-btn" title="音響設定">
-            🔊
-        </button>
-        <div id="audio-panel" class="audio-panel" style="display: none;">
+        <!-- 音響パネル（Alpine.js + 既存JS統合版） -->
+        <div id="audio-panel" class="audio-panel" style="display: none;" 
+             x-data="{ 
+                 bgmOn: true, 
+                 seOn: true,
+                 bgmVolume: 30,
+                 seVolume: 70,
+                 toggleBGM() {
+                     if (window.SoundManager) window.SoundManager.play('button');
+                     this.bgmOn = !this.bgmOn;
+                     console.log('🎵 Alpine.js BGM切り替え:', this.bgmOn ? 'ON' : 'OFF');
+                     
+                     // 既存のSoundManagerと連携
+                     if (window.SoundManager) {
+                         console.log('🔍 BGM制御詳細:', {
+                             'Alpine状態': this.bgmOn ? 'ON' : 'OFF',
+                             'SoundManager存在': !!window.SoundManager,
+                             'BGM開始済み': window.SoundManager.bgmStarted,
+                             'BGM有効': window.SoundManager.bgmEnabled
+                         });
+                         
+                         window.SoundManager.bgmEnabled = this.bgmOn;
+                         if (this.bgmOn && !window.SoundManager.bgmStarted) {
+                             console.log('🎵 BGM開始要求: Alpine→SoundManager');
+                             window.SoundManager.startBGM();
+                         } else if (!this.bgmOn) {
+                             console.log('🎵 BGM停止要求: Alpine→SoundManager');
+                             window.SoundManager.stopBGM();
+                         }
+                     } else {
+                         console.warn('⚠️ SoundManager未初期化: BGM制御不可');
+                     }
+                 },
+                 toggleSE() {
+                     if (window.SoundManager) window.SoundManager.play('button');
+                     this.seOn = !this.seOn;
+                     console.log('🔊 Alpine.js SE切り替え:', this.seOn ? 'ON' : 'OFF');
+                     
+                     if (window.SoundManager) {
+                         console.log('🔍 SE制御詳細:', {
+                             'Alpine状態': this.seOn ? 'ON' : 'OFF',
+                             'SoundManager存在': !!window.SoundManager,
+                             'SE有効': window.SoundManager.seEnabled,
+                             '登録済みSE数': Object.keys(window.SoundManager.sounds || {}).length
+                         });
+                         
+                         window.SoundManager.seEnabled = this.seOn;
+                         console.log('✅ SE制御更新完了: seEnabled =', this.seOn);
+                     } else {
+                         console.warn('⚠️ SoundManager未初期化: SE制御不可');
+                     }
+                 }
+             }">
             <div class="audio-setting">
                 <label>🎵 BGM</label>
                 <div class="audio-control-row">
-                    <button id="bgm-toggle" class="toggle-btn">ON</button>
-                    <input type="range" id="bgm-volume" min="0" max="100" value="30" class="volume-slider">
+                    <button @click="toggleBGM()" 
+                            :class="bgmOn ? 'toggle-btn' : 'toggle-btn off'"
+                            x-text="bgmOn ? 'ON' : 'OFF'">
+                    </button>
+                    <input type="range" 
+                           x-model="bgmVolume" 
+                           @input="console.log('🎵 BGMボリューム変更:', $event.target.value); window.SoundManager?.setBGMVolume($event.target.value)"
+                           @change="console.log('🎵 BGMボリューム確定:', $event.target.value); window.SoundManager?.play('select')"
+                           min="0" max="100" 
+                           class="volume-slider">
                 </div>
             </div>
             <div class="audio-setting">
                 <label>🔊 SE</label>
                 <div class="audio-control-row">
-                    <button id="se-toggle" class="toggle-btn">ON</button>
-                    <input type="range" id="se-volume" min="0" max="100" value="70" class="volume-slider">
+                    <button @click="toggleSE()" 
+                            :class="seOn ? 'toggle-btn' : 'toggle-btn off'"
+                            x-text="seOn ? 'ON' : 'OFF'">
+                    </button>
+                    <input type="range" 
+                           x-model="seVolume" 
+                           @input="console.log('🔊 SEボリューム変更:', $event.target.value); window.SoundManager?.setSEVolume($event.target.value)"
+                           @change="console.log('🔊 SEボリューム確定:', $event.target.value); window.SoundManager?.play('select')"
+                           min="0" max="100" 
+                           class="volume-slider">
                 </div>
             </div>
-            <button id="audio-close" class="close-btn">×</button>
+            <button @click="console.log('🔊 音響パネル閉じる'); window.SoundManager?.play('button'); $el.parentElement.style.display = 'none'" class="close-btn">×</button>
         </div>
-    </div>
+
+        <!-- フェーズポップアップモーダル（game-container内配置） -->
+        <div id="phase-popup-modal" class="phase-popup-modal" style="display: none;">
+            <div class="phase-popup-content">
+                <div id="phase-popup-icon" class="phase-popup-icon">⚔️</div>
+                <div id="phase-popup-text" class="phase-popup-text">戦闘フェーズ</div>
+            </div>
+        </div>
+        </div> <!-- game-container 終了 -->
+    </div> <!-- game-viewport 終了 -->
+
+    <!-- マリガンシステムは自動化により削除済み -->
 
     <!-- ヘルプモーダル -->
     <div id="help-modal" class="help-modal" style="display: none;">
@@ -307,11 +410,17 @@
         </div>
     </div>
 
-    <!-- フェーズポップアップモーダル -->
-    <div id="phase-popup-modal" class="phase-popup-modal" style="display: none;">
-        <div class="phase-popup-content">
-            <div id="phase-popup-icon" class="phase-popup-icon">⚔️</div>
-            <div id="phase-popup-text" class="phase-popup-text">戦闘フェーズ</div>
+
+    <!-- 降参確認モーダル -->
+    <div id="surrender-modal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[2000]" style="display: none;">
+        <div class="modal-content surrender-modal">
+            <div class="modal-icon">⚠️</div>
+            <h3 class="modal-title">降参の確認</h3>
+            <p class="modal-message">本当に降参しますか？<br>ゲームが終了します。</p>
+            <div class="modal-buttons">
+                <button id="surrender-confirm-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 mr-3">はい、降参します</button>
+                <button id="surrender-cancel-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">キャンセル</button>
+            </div>
         </div>
     </div>
 
@@ -323,8 +432,8 @@
             <h2 id="result-title" class="result-title">勝利！</h2>
             <p id="result-message" class="result-message">敵カード5コストを撃破しました</p>
             <div class="result-buttons">
-                <button id="result-restart-btn" class="result-restart-btn">ゲーム再開</button>
-                <button id="result-close-btn" class="result-close-btn">閉じる</button>
+                <button id="result-restart-btn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 mr-4">ゲーム再開</button>
+                <button id="result-close-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200">閉じる</button>
             </div>
         </div>
     </div>
